@@ -1,0 +1,26 @@
+[workspace]
+members = [".", "generate-voices"]
+
+[package]
+name = "twilio-voice"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+amass = "0.1.0"
+base64 = "0.22.1"
+futures = "0.3.31"
+hmac = "0.12.1"
+quick-xml = { version = "0.37.5", features = [
+    "serde-types",
+    "serialize",
+] }
+serde = { version = "1.0.219", features = [
+    "derive",
+] }
+serde_with = "3.12.0"
+sha1 = "0.10.6"
+sha2 = "0.10.9"
+thiserror = "2.0.12"
+typed-builder = "0.21.0"
+url = "2.5.4"
