@@ -1,29 +1,47 @@
-// Voice module for vi-VN language
 use serde::{Serialize, Deserialize};
 
-pub mod standard {
-    use serde::{Serialize, Deserialize};
+pub mod neural {
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
-            #[serde(rename = "Google.vi-VN-Standard-A")]
-            StandardA,
-            #[serde(rename = "Google.vi-VN-Standard-C")]
-            StandardC,
+            #[serde(rename = "Google.vi-VN-Wavenet-A")]
+            WavenetA,
+            #[serde(rename = "Google.vi-VN-Wavenet-C")]
+            WavenetC,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::ViVn(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
-            #[serde(rename = "Google.vi-VN-Standard-B")]
-            StandardB,
-            #[serde(rename = "Google.vi-VN-Standard-D")]
-            StandardD,
+            #[serde(rename = "Google.vi-VN-Wavenet-B")]
+            WavenetB,
+            #[serde(rename = "Google.vi-VN-Wavenet-D")]
+            WavenetD,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::vi_vn::standard::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::ViVn(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -31,20 +49,22 @@ pub mod standard {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::vi_vn::standard)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
+
 pub mod generative {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.vi-VN-Chirp3-HD-Aoede")]
             Chirp3HDAoede,
@@ -56,7 +76,17 @@ pub mod generative {
             Chirp3HDZephyr,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::ViVn(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.vi-VN-Chirp3-HD-Charon")]
             Chirp3HDCharon,
@@ -68,7 +98,15 @@ pub mod generative {
             Chirp3HDPuck,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::vi_vn::generative::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::ViVn(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -76,36 +114,56 @@ pub mod generative {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::vi_vn::generative)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
-pub mod neural {
-    use serde::{Serialize, Deserialize};
+
+pub mod standard {
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
-            #[serde(rename = "Google.vi-VN-Wavenet-A")]
-            WavenetA,
-            #[serde(rename = "Google.vi-VN-Wavenet-C")]
-            WavenetC,
+            #[serde(rename = "Google.vi-VN-Standard-A")]
+            StandardA,
+            #[serde(rename = "Google.vi-VN-Standard-C")]
+            StandardC,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::ViVn(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
-            #[serde(rename = "Google.vi-VN-Wavenet-B")]
-            WavenetB,
-            #[serde(rename = "Google.vi-VN-Wavenet-D")]
-            WavenetD,
+            #[serde(rename = "Google.vi-VN-Standard-B")]
+            StandardB,
+            #[serde(rename = "Google.vi-VN-Standard-D")]
+            StandardD,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::vi_vn::neural::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::ViVn(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -113,18 +171,18 @@ pub mod neural {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::vi_vn::neural)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
-#[amass::amass_telety(crate::twiml::voices::vi_vn)]
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
-    Standard(standard::Voice),
-    Generative(generative::Voice),
     Neural(neural::Voice),
+    Generative(generative::Voice),
+    Standard(standard::Voice),
 }

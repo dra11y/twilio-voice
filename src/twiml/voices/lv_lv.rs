@@ -1,33 +1,41 @@
-// Voice module for lv-LV language
 use serde::{Serialize, Deserialize};
 
 pub mod standard {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.lv-LV-Standard-B")]
             StandardB,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::lv_lv::standard::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::LvLv(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::lv_lv::standard)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
-#[amass::amass_telety(crate::twiml::voices::lv_lv)]
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {

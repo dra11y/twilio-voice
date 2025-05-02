@@ -1,73 +1,13 @@
-// Voice module for ko-KR language
 use serde::{Serialize, Deserialize};
 
-pub mod neural {
-    use serde::{Serialize, Deserialize};
-
-    pub mod google {
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Google.ko-KR-Neural2-A")]
-            Neural2A,
-            #[serde(rename = "Google.ko-KR-Neural2-B")]
-            Neural2B,
-            #[serde(rename = "Google.ko-KR-Wavenet-A")]
-            WavenetA,
-            #[serde(rename = "Google.ko-KR-Wavenet-B")]
-            WavenetB,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Google.ko-KR-Neural2-C")]
-            Neural2C,
-            #[serde(rename = "Google.ko-KR-Wavenet-C")]
-            WavenetC,
-            #[serde(rename = "Google.ko-KR-Wavenet-D")]
-            WavenetD,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ko_kr::neural::google)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-    }
-    pub mod polly {
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Seoyeon-Neural")]
-            SeoyeonNeural,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ko_kr::neural::polly)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-        }
-    }
-    #[amass::amass_telety(crate::twiml::voices::ko_kr::neural)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(untagged)]
-    pub enum Voice {
-        Google(google::Voice),
-        Polly(polly::Voice),
-    }
-}
 pub mod standard {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ko-KR-Standard-A")]
             StandardA,
@@ -75,7 +15,17 @@ pub mod standard {
             StandardB,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::KoKr(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.ko-KR-Standard-C")]
             StandardC,
@@ -83,7 +33,15 @@ pub mod standard {
             StandardD,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::ko_kr::standard::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::KoKr(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -91,23 +49,16 @@ pub mod standard {
             Male(Male),
         }
     }
+
     pub mod polly {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Seoyeon")]
-            Seoyeon,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ko_kr::standard::polly)]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::ko_kr::standard)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
@@ -115,13 +66,15 @@ pub mod standard {
         Polly(polly::Voice),
     }
 }
+
 pub mod generative {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ko-KR-Chirp3-HD-Aoede")]
             Chirp3HDAoede,
@@ -133,7 +86,17 @@ pub mod generative {
             Chirp3HDZephyr,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::KoKr(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.ko-KR-Chirp3-HD-Charon")]
             Chirp3HDCharon,
@@ -145,7 +108,15 @@ pub mod generative {
             Chirp3HDPuck,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::ko_kr::generative::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::KoKr(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -153,18 +124,91 @@ pub mod generative {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::ko_kr::generative)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
-#[amass::amass_telety(crate::twiml::voices::ko_kr)]
+
+pub mod neural {
+    use super::*;
+
+    pub mod google {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.ko-KR-Neural2-A")]
+            Neural2A,
+            #[serde(rename = "Google.ko-KR-Neural2-B")]
+            Neural2B,
+            #[serde(rename = "Google.ko-KR-Wavenet-A")]
+            WavenetA,
+            #[serde(rename = "Google.ko-KR-Wavenet-B")]
+            WavenetB,
+        }
+
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::KoKr(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Google.ko-KR-Neural2-C")]
+            Neural2C,
+            #[serde(rename = "Google.ko-KR-Wavenet-C")]
+            WavenetC,
+            #[serde(rename = "Google.ko-KR-Wavenet-D")]
+            WavenetD,
+        }
+
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::KoKr(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Female(Female),
+            Male(Male),
+        }
+    }
+
+    pub mod polly {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(untagged)]
+    pub enum Voice {
+        Google(google::Voice),
+        Polly(polly::Voice),
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
-    Neural(neural::Voice),
     Standard(standard::Voice),
     Generative(generative::Voice),
+    Neural(neural::Voice),
 }

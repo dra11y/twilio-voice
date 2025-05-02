@@ -1,13 +1,78 @@
-// Voice module for ja-JP language
 use serde::{Serialize, Deserialize};
 
-pub mod generative {
-    use serde::{Serialize, Deserialize};
+pub mod neural {
+    use super::*;
 
-    pub mod google {
-        use serde::{Serialize, Deserialize};
+    pub mod polly {
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+        }
+    }
+
+    pub mod google {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.ja-JP-Wavenet-B")]
+            WavenetB,
+        }
+
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::JaJp(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Google.ja-JP-Wavenet-C")]
+            WavenetC,
+            #[serde(rename = "Google.ja-JP-Wavenet-D")]
+            WavenetD,
+        }
+
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::JaJp(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Female(Female),
+            Male(Male),
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(untagged)]
+    pub enum Voice {
+        Polly(polly::Voice),
+        Google(google::Voice),
+    }
+}
+
+pub mod generative {
+    use super::*;
+
+    pub mod google {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ja-JP-Chirp3-HD-Aoede")]
             Chirp3HDAoede,
@@ -19,7 +84,17 @@ pub mod generative {
             Chirp3HDZephyr,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::JaJp(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.ja-JP-Chirp3-HD-Charon")]
             Chirp3HDCharon,
@@ -31,7 +106,15 @@ pub mod generative {
             Chirp3HDPuck,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::ja_jp::generative::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::JaJp(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -39,26 +122,47 @@ pub mod generative {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::ja_jp::generative)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 }
-pub mod standard {
-    use serde::{Serialize, Deserialize};
 
-    pub mod google {
-        use serde::{Serialize, Deserialize};
+pub mod standard {
+    use super::*;
+
+    pub mod polly {
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+        }
+    }
+
+    pub mod google {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ja-JP-Standard-B")]
             StandardB,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::JaJp(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.ja-JP-Standard-C")]
             StandardC,
@@ -66,7 +170,15 @@ pub mod standard {
             StandardD,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::ja_jp::standard::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::JaJp(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -74,103 +186,19 @@ pub mod standard {
             Male(Male),
         }
     }
-    pub mod polly {
-        use serde::{Serialize, Deserialize};
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Mizuki")]
-            Mizuki,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Polly.Takumi")]
-            Takumi,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ja_jp::standard::polly)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-    }
-    #[amass::amass_telety(crate::twiml::voices::ja_jp::standard)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Google(google::Voice),
         Polly(polly::Voice),
+        Google(google::Voice),
     }
 }
-pub mod neural {
-    use serde::{Serialize, Deserialize};
 
-    pub mod google {
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Google.ja-JP-Wavenet-B")]
-            WavenetB,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Google.ja-JP-Wavenet-C")]
-            WavenetC,
-            #[serde(rename = "Google.ja-JP-Wavenet-D")]
-            WavenetD,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ja_jp::neural::google)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-    }
-    pub mod polly {
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Kazuha-Neural")]
-            KazuhaNeural,
-            #[serde(rename = "Polly.Tomoko-Neural")]
-            TomokoNeural,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Polly.Takumi-Neural")]
-            TakumiNeural,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::ja_jp::neural::polly)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-    }
-    #[amass::amass_telety(crate::twiml::voices::ja_jp::neural)]
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-    #[serde(untagged)]
-    pub enum Voice {
-        Google(google::Voice),
-        Polly(polly::Voice),
-    }
-}
-#[amass::amass_telety(crate::twiml::voices::ja_jp)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
+    Neural(neural::Voice),
     Generative(generative::Voice),
     Standard(standard::Voice),
-    Neural(neural::Voice),
 }

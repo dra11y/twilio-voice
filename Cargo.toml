@@ -6,8 +6,160 @@ name = "twilio-voice"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+all = [
+    "af_za",
+    "ar_ae",
+    "ar_xa",
+    "arb",
+    "bg_bg",
+    "bn_in",
+    "ca_es",
+    "cmn_cn",
+    "cmn_tw",
+    "cs_cz",
+    "cy_gb",
+    "da_dk",
+    "de_at",
+    "de_de",
+    "el_gr",
+    "en_au",
+    "en_gb_wls",
+    "en_gb",
+    "en_ie",
+    "en_in",
+    "en_nz",
+    "en_us",
+    "en_za",
+    "es_es",
+    "es_mx",
+    "es_us",
+    "eu_es",
+    "fi_fi",
+    "fil_ph",
+    "fr_be",
+    "fr_ca",
+    "fr_fr",
+    "gl_es",
+    "gu_in",
+    "he_il",
+    "hi_in",
+    "hu_hu",
+    "id_id",
+    "is_is",
+    "it_it",
+    "ja_jp",
+    "kn_in",
+    "ko_kr",
+    "lt_lt",
+    "lv_lv",
+    "ml_in",
+    "mr_in",
+    "ms_my",
+    "nb_no",
+    "nl_be",
+    "nl_nl",
+    "pa_in",
+    "pl_pl",
+    "pt_br",
+    "pt_pt",
+    "ro_ro",
+    "ru_ru",
+    "sk_sk",
+    "sv_se",
+    "ta_in",
+    "te_in",
+    "th_th",
+    "tr_tr",
+    "vi_vn",
+    "yue_cn",
+    "yue_hk",
+]
+af_za = []
+ar_ae = []
+ar_xa = []
+arb = []
+bg_bg = []
+bn_in = []
+ca_es = []
+cmn = ["cmn_cn", "cmn_tw"]
+cmn_cn = []
+cmn_tw = []
+cs_cz = []
+cy_gb = []
+da_dk = []
+de = ["de_at", "de_de"]
+de_at = []
+de_de = []
+el_gr = []
+en = [
+    "en_au",
+    "en_gb_wls",
+    "en_gb",
+    "en_ie",
+    "en_in",
+    "en_nz",
+    "en_us",
+    "en_za",
+]
+en_au = []
+en_gb_wls = []
+en_gb = []
+en_ie = []
+en_in = []
+en_nz = []
+en_us = []
+en_za = []
+es = ["es_es", "es_mx", "es_us"]
+es_es = []
+es_mx = []
+es_us = []
+eu_es = []
+fi_fi = []
+fil_ph = []
+fr = ["fr_be", "fr_ca", "fr_fr"]
+fr_be = []
+fr_ca = []
+fr_fr = []
+gl_es = []
+gu_in = []
+he_il = []
+hi_in = []
+hu_hu = []
+id_id = []
+is_is = []
+it_it = []
+ja_jp = []
+kn_in = []
+ko_kr = []
+lt_lt = []
+lv_lv = []
+ml_in = []
+mr_in = []
+ms_my = []
+nb_no = []
+nl = ["nl_be", "nl_nl"]
+nl_be = []
+nl_nl = []
+pa_in = []
+pl_pl = []
+pt = ["pt_br", "pt_pt"]
+pt_br = []
+pt_pt = []
+ro_ro = []
+ru_ru = []
+sk_sk = []
+sv_se = []
+ta_in = []
+te_in = []
+th_th = []
+tr_tr = []
+vi_vn = []
+yue = ["yue_cn", "yue_hk"]
+yue_cn = []
+yue_hk = []
+
 [dependencies]
-amass = "0.1.0"
 base64 = "0.22.1"
 futures = "0.3.31"
 hmac = "0.12.1"

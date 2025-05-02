@@ -1,42 +1,22 @@
-// Voice module for en-US language
 use serde::{Serialize, Deserialize};
 
 pub mod generative {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod polly {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Danielle-Generative")]
-            DanielleGenerative,
-            #[serde(rename = "Polly.Joanna-Generative")]
-            JoannaGenerative,
-            #[serde(rename = "Polly.Ruth-Generative")]
-            RuthGenerative,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Polly.Matthew-Generative")]
-            MatthewGenerative,
-            #[serde(rename = "Polly.Stephen-Generative")]
-            StephenGenerative,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::en_us::generative::polly)]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
-            Male(Male),
         }
     }
+
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.en-US-Chirp3-HD-Aoede")]
             Chirp3HDAoede,
@@ -48,7 +28,17 @@ pub mod generative {
             Chirp3HDZephyr,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::EnUs(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.en-US-Chirp3-HD-Charon")]
             Chirp3HDCharon,
@@ -60,7 +50,15 @@ pub mod generative {
             Chirp3HDPuck,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::en_us::generative::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::EnUs(super::super::Voice::Generative(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -68,7 +66,7 @@ pub mod generative {
             Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::en_us::generative)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
@@ -76,13 +74,15 @@ pub mod generative {
         Google(google::Voice),
     }
 }
+
 pub mod neural {
-    use serde::{Serialize, Deserialize};
+    use super::*;
 
     pub mod google {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.en-US-Neural2-C")]
             Neural2C,
@@ -106,7 +106,17 @@ pub mod neural {
             WavenetH,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::EnUs(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.en-US-Neural2-A")]
             Neural2A,
@@ -128,7 +138,15 @@ pub mod neural {
             WavenetJ,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::en_us::neural::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::EnUs(super::super::Voice::Neural(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -136,52 +154,16 @@ pub mod neural {
             Male(Male),
         }
     }
+
     pub mod polly {
-        use serde::{Serialize, Deserialize};
+        use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Danielle-Neural")]
-            DanielleNeural,
-            #[serde(rename = "Polly.Ivy-Neural")]
-            IvyNeural,
-            #[serde(rename = "Polly.Joanna-Neural")]
-            JoannaNeural,
-            #[serde(rename = "Polly.Kendra-Neural")]
-            KendraNeural,
-            #[serde(rename = "Polly.Kimberly-Neural")]
-            KimberlyNeural,
-            #[serde(rename = "Polly.Ruth-Neural")]
-            RuthNeural,
-            #[serde(rename = "Polly.Salli-Neural")]
-            SalliNeural,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Polly.Gregory-Neural")]
-            GregoryNeural,
-            #[serde(rename = "Polly.Joey-Neural")]
-            JoeyNeural,
-            #[serde(rename = "Polly.Justin-Neural")]
-            JustinNeural,
-            #[serde(rename = "Polly.Kevin-Neural")]
-            KevinNeural,
-            #[serde(rename = "Polly.Matthew-Neural")]
-            MatthewNeural,
-            #[serde(rename = "Polly.Stephen-Neural")]
-            StephenNeural,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::en_us::neural::polly)]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
-            Male(Male),
         }
     }
-    #[amass::amass_telety(crate::twiml::voices::en_us::neural)]
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
@@ -189,13 +171,24 @@ pub mod neural {
         Polly(polly::Voice),
     }
 }
-pub mod standard {
-    use serde::{Serialize, Deserialize};
 
-    pub mod google {
-        use serde::{Serialize, Deserialize};
+pub mod standard {
+    use super::*;
+
+    pub mod polly {
+        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+        }
+    }
+
+    pub mod google {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.en-US-Standard-C")]
             StandardC,
@@ -209,7 +202,17 @@ pub mod standard {
             StandardH,
         }
 
+
+                            impl From<Female> for crate::Voice {
+                                fn from(value: Female) -> Self {
+                                    Self::EnUs(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Female(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.en-US-Standard-A")]
             StandardA,
@@ -223,7 +226,15 @@ pub mod standard {
             StandardJ,
         }
 
-        #[amass::amass_telety(crate::twiml::voices::en_us::standard::google)]
+
+                            impl From<Male> for crate::Voice {
+                                fn from(value: Male) -> Self {
+                                    Self::EnUs(super::super::Voice::Standard(super::Voice::Google(
+                                        Voice::Male(value),
+                                    )))
+                                }
+                            }
+                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -231,52 +242,15 @@ pub mod standard {
             Male(Male),
         }
     }
-    pub mod polly {
-        use serde::{Serialize, Deserialize};
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Female {
-            #[serde(rename = "Polly.Ivy")]
-            Ivy,
-            #[serde(rename = "Polly.Joanna")]
-            Joanna,
-            #[serde(rename = "Polly.Kendra")]
-            Kendra,
-            #[serde(rename = "Polly.Kimberly")]
-            Kimberly,
-            #[serde(rename = "Polly.Salli")]
-            Salli,
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        pub enum Male {
-            #[serde(rename = "Polly.Joey")]
-            Joey,
-            #[serde(rename = "Polly.Justin")]
-            Justin,
-            #[serde(rename = "Polly.Kevin")]
-            Kevin,
-            #[serde(rename = "Polly.Matthew")]
-            Matthew,
-        }
-
-        #[amass::amass_telety(crate::twiml::voices::en_us::standard::polly)]
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-    }
-    #[amass::amass_telety(crate::twiml::voices::en_us::standard)]
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Google(google::Voice),
         Polly(polly::Voice),
+        Google(google::Voice),
     }
 }
-#[amass::amass_telety(crate::twiml::voices::en_us)]
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
