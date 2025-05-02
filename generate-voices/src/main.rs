@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 
+use convert_case::{Case, Casing};
 use headless_chrome::{Browser, LaunchOptions};
 use scraper::{Html, Selector};
 
@@ -149,6 +150,8 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
         lang_groups.entry(lang_code).or_default().push(voice);
     }
 
+    println!("lang_groups:\n{lang_groups:#?}");
+
     // Create the main mod.rs file
     let mut main_file = String::new();
     writeln!(
@@ -164,9 +167,13 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
     writeln!(main_file, "#![allow(non_local_definitions)]")?;
     writeln!(main_file)?;
 
+    let mut lang_codes: Vec<_> = lang_groups.keys().collect();
+    lang_codes.sort();
+
     // Create module declarations
-    for lang_code in lang_groups.keys() {
+    for lang_code in &lang_codes {
         let module_name = lang_code.replace("-", "_").to_lowercase();
+        writeln!(main_file, r#"#[cfg(feature = "{module_name}")]"#)?;
         writeln!(main_file, "pub mod {module_name};")?;
     }
 
@@ -177,22 +184,19 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
     writeln!(main_file)?;
 
     // Fix for the root module path - using just the module path without 'root'
-    writeln!(main_file, "#[amass::amass_telety(crate::twiml::voices)]")?;
+    // writeln!(main_file, "#[amass::amass_telety(crate::twiml::voices)]")?;
     writeln!(
         main_file,
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
     )?;
     writeln!(main_file, "#[serde(untagged)]")?;
+    writeln!(main_file, "#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
 
-    let mut lang_codes: Vec<_> = lang_groups.keys().collect();
-    lang_codes.sort();
-
-    for lang_code in lang_codes {
+    for lang_code in &lang_codes {
         let module_name = lang_code.replace("-", "_").to_lowercase();
-
-        // Use PascalCase for enum variants
         let variant_name = to_pascal_case(&module_name);
+        writeln!(main_file, r#"    #[cfg(feature = "{module_name}")]"#)?;
         writeln!(main_file, "    {variant_name}({module_name}::Voice),")?;
     }
 
@@ -205,7 +209,8 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
 
     // Create a single file per language code
     for (lang_code, voices_in_lang) in lang_groups {
-        let module_name = lang_code.replace("-", "_").to_lowercase();
+        let module_name = lang_code.to_case(Case::Snake);
+        let lang_variant = lang_code.to_case(Case::Pascal);
         let mut lang_file = String::new();
 
         writeln!(lang_file, "// Voice module for {lang_code} language")?;
@@ -250,121 +255,154 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
             // Add provider modules
             for (provider, voices_by_provider) in &provider_groups {
                 let provider_module = provider.to_lowercase();
-                if !provider_module.is_empty() {
-                    // Check for empty module names
-                    writeln!(lang_file, "    pub mod {provider_module} {{")?;
 
-                    // Make sure to include the serde import at provider level
-                    writeln!(lang_file, "        use serde::{{Serialize, Deserialize}};")?;
-                    writeln!(lang_file)?;
+                // Check for empty module names
+                if provider_module.is_empty() {
+                    continue;
+                }
 
-                    // Create mappings to deduplicate voices by name
-                    let mut female_voice_map = HashMap::new();
-                    let mut male_voice_map = HashMap::new();
+                writeln!(lang_file, "    pub mod {provider_module} {{")?;
 
-                    // Process voices into maps to deduplicate by variant name
-                    for voice in voices_by_provider.iter() {
-                        let variant_name = extract_short_name(&voice.voice_name);
-                        if !variant_name.is_empty() {
-                            // The variant_name should now already include the technology type (Neural2A, WavenetA, etc.)
-                            if voice.gender.starts_with("Female") {
-                                // Only insert if not present yet
-                                if !female_voice_map.contains_key(&variant_name) {
-                                    female_voice_map.insert(
-                                        variant_name.clone(),
-                                        format!("{}.{}", voice.provider, voice.voice_name),
-                                    );
-                                }
-                            } else if voice.gender.starts_with("Male") {
-                                // Only insert if not present yet
-                                if !male_voice_map.contains_key(&variant_name) {
-                                    male_voice_map.insert(
-                                        variant_name.clone(),
-                                        format!("{}.{}", voice.provider, voice.voice_name),
-                                    );
-                                }
+                // Make sure to include the serde import at provider level
+                writeln!(lang_file, "        use serde::{{Serialize, Deserialize}};")?;
+                writeln!(lang_file)?;
+
+                // Create mappings to deduplicate voices by name
+                let mut female_voice_map = HashMap::new();
+                let mut male_voice_map = HashMap::new();
+
+                // Process voices into maps to deduplicate by variant name
+                for voice in voices_by_provider.iter() {
+                    let variant_name = extract_short_name(&voice.voice_name);
+                    if !variant_name.is_empty() {
+                        // The variant_name should now already include the technology type (Neural2A, WavenetA, etc.)
+                        if voice.gender.starts_with("Female") {
+                            // Only insert if not present yet
+                            if !female_voice_map.contains_key(&variant_name) {
+                                female_voice_map.insert(
+                                    variant_name.clone(),
+                                    format!("{}.{}", voice.provider, voice.voice_name),
+                                );
+                            }
+                        } else if voice.gender.starts_with("Male") {
+                            // Only insert if not present yet
+                            if !male_voice_map.contains_key(&variant_name) {
+                                male_voice_map.insert(
+                                    variant_name.clone(),
+                                    format!("{}.{}", voice.provider, voice.voice_name),
+                                );
                             }
                         }
                     }
+                }
 
-                    // Female enum if needed
-                    if !female_voice_map.is_empty() {
-                        writeln!(
-                            lang_file,
-                            "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-                        )?;
-                        writeln!(lang_file, "        pub enum Female {{")?;
-
-                        // Sort keys for consistent output
-                        let mut keys: Vec<_> = female_voice_map.keys().collect();
-                        keys.sort();
-
-                        for key in keys {
-                            let full_name = &female_voice_map[key];
-                            writeln!(lang_file, "            #[serde(rename = \"{full_name}\")]")?;
-                            writeln!(lang_file, "            {key},")?;
-                        }
-
-                        writeln!(lang_file, "        }}")?;
-                        writeln!(lang_file)?;
-                    }
-
-                    // Male enum if needed
-                    if !male_voice_map.is_empty() {
-                        writeln!(
-                            lang_file,
-                            "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-                        )?;
-                        writeln!(lang_file, "        pub enum Male {{")?;
-
-                        // Sort keys for consistent output
-                        let mut keys: Vec<_> = male_voice_map.keys().collect();
-                        keys.sort();
-
-                        for key in keys {
-                            let full_name = &male_voice_map[key];
-                            writeln!(lang_file, "            #[serde(rename = \"{full_name}\")]")?;
-                            writeln!(lang_file, "            {key},")?;
-                        }
-
-                        writeln!(lang_file, "        }}")?;
-                        writeln!(lang_file)?;
-                    }
-
-                    // Provider Voice enum - use unique path for provider level
-                    let provider_path = format!(
-                        "crate::twiml::voices::{module_name}::{type_module}::{provider_module}"
-                    );
-                    writeln!(lang_file, "        #[amass::amass_telety({provider_path})]")?;
+                // Female enum if needed
+                if !female_voice_map.is_empty() {
                     writeln!(
                         lang_file,
                         "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
                     )?;
-                    writeln!(lang_file, "        #[serde(untagged)]")?;
-                    writeln!(lang_file, "        pub enum Voice {{")?;
+                    writeln!(lang_file, "        #[non_exhaustive]")?;
+                    writeln!(lang_file, "        pub enum Female {{")?;
 
-                    if !female_voice_map.is_empty() {
-                        writeln!(lang_file, "            Female(Female),")?;
-                    }
+                    // Sort keys for consistent output
+                    let mut keys: Vec<_> = female_voice_map.keys().collect();
+                    keys.sort();
 
-                    if !male_voice_map.is_empty() {
-                        writeln!(lang_file, "            Male(Male),")?;
+                    for key in keys {
+                        let full_name = &female_voice_map[key];
+                        writeln!(lang_file, "            #[serde(rename = \"{full_name}\")]")?;
+                        writeln!(lang_file, "            {key},")?;
                     }
 
                     writeln!(lang_file, "        }}")?;
+                    writeln!(lang_file)?;
 
-                    writeln!(lang_file, "    }}")?; // End provider module
+                    writeln!(
+                        lang_file,
+                        r#"
+                            impl From<Female> for crate::Voice {{
+                                fn from(value: Female) -> Self {{
+                                    Self::{lang_variant}(super::super::Voice::{voice_type}(super::Voice::{provider}(
+                                        Voice::Female(value),
+                                    )))
+                                }}
+                            }}
+                        "#
+                    )?;
                 }
+
+                // Male enum if needed
+                if !male_voice_map.is_empty() {
+                    writeln!(
+                        lang_file,
+                        "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
+                    )?;
+                    writeln!(lang_file, "        #[non_exhaustive]")?;
+                    writeln!(lang_file, "        pub enum Male {{")?;
+
+                    // Sort keys for consistent output
+                    let mut keys: Vec<_> = male_voice_map.keys().collect();
+                    keys.sort();
+
+                    for key in keys {
+                        let full_name = &male_voice_map[key];
+                        writeln!(lang_file, "            #[serde(rename = \"{full_name}\")]")?;
+                        writeln!(lang_file, "            {key},")?;
+                    }
+
+                    writeln!(lang_file, "        }}")?;
+                    writeln!(lang_file)?;
+
+                    writeln!(
+                        lang_file,
+                        r#"
+                            impl From<Male> for crate::Voice {{
+                                fn from(value: Male) -> Self {{
+                                    Self::{lang_variant}(super::super::Voice::{voice_type}(super::Voice::{provider}(
+                                        Voice::Male(value),
+                                    )))
+                                }}
+                            }}
+                        "#
+                    )?;
+                }
+
+                // // Provider Voice enum - use unique path for provider level
+                // let provider_path = format!(
+                //     "crate::twiml::voices::{module_name}::{type_module}::{provider_module}"
+                // );
+                // writeln!(lang_file, "        #[amass::amass_telety({provider_path})]")?;
+                writeln!(
+                    lang_file,
+                    "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
+                )?;
+                writeln!(lang_file, "        #[serde(untagged)]")?;
+                writeln!(lang_file, "        #[non_exhaustive]")?;
+                writeln!(lang_file, "        pub enum Voice {{")?;
+
+                if !female_voice_map.is_empty() {
+                    writeln!(lang_file, "            Female(Female),")?;
+                }
+
+                if !male_voice_map.is_empty() {
+                    writeln!(lang_file, "            Male(Male),")?;
+                }
+
+                writeln!(lang_file, "        }}")?;
+
+                writeln!(lang_file, "    }}")?; // End provider module
             }
 
             // Type Voice enum - use unique path for type level
             let type_path = format!("crate::twiml::voices::{module_name}::{type_module}");
-            writeln!(lang_file, "    #[amass::amass_telety({type_path})]")?;
+            // writeln!(lang_file, "    #[amass::amass_telety({type_path})]")?;
             writeln!(
                 lang_file,
                 "    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
             )?;
             writeln!(lang_file, "    #[serde(untagged)]")?;
+            writeln!(lang_file, "    #[non_exhaustive]")?;
             writeln!(lang_file, "    pub enum Voice {{")?;
 
             for provider in provider_groups.keys() {
@@ -387,12 +425,13 @@ fn generate_voice_module_structure(voices: &[VoiceData]) -> Result<(), Box<dyn s
 
         // Language Voice enum - use unique path for language level
         let lang_path = format!("crate::twiml::voices::{module_name}");
-        writeln!(lang_file, "#[amass::amass_telety({lang_path})]")?;
+        // writeln!(lang_file, "#[amass::amass_telety({lang_path})]")?;
         writeln!(
             lang_file,
             "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
         )?;
         writeln!(lang_file, "#[serde(untagged)]")?;
+        writeln!(lang_file, "#[non_exhaustive]")?;
         writeln!(lang_file, "pub enum Voice {{")?;
 
         for voice_type in type_groups.keys() {
