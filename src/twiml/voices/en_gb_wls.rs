@@ -1,5 +1,7 @@
 #![allow(non_upper_case_globals)]
 
+use crate::{STANDARD_VOICE_PRICE, VoicePrice};
+
 use serde::{Deserialize, Serialize};
 
 pub mod standard {
@@ -15,6 +17,12 @@ pub mod standard {
             Geraint,
         }
 
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
+
         impl From<Male> for crate::Voice {
             fn from(value: Male) -> Self {
                 Self::EnGbWls(super::super::Voice::Standard(super::Voice::Polly(
@@ -28,6 +36,12 @@ pub mod standard {
         pub enum Voice {
             Male(Male),
         }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,12 +49,25 @@ pub mod standard {
     pub enum Voice {
         Polly(polly::Voice),
     }
+
+    impl VoicePrice for Voice {
+        fn price(&self) -> f32 {
+            STANDARD_VOICE_PRICE
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
+}
+impl VoicePrice for Voice {
+    fn price(&self) -> f32 {
+        match self {
+            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+        }
+    }
 }
 
 pub mod male {

@@ -15,7 +15,7 @@ pub enum ResponseVerb {
 #[derive(Debug, Clone, PartialEq, Eq, TypedBuilder, Serialize, Deserialize)]
 pub struct Response {
     #[serde(rename = "$value")]
-    verbs: Vec<ResponseVerb>,
+    pub verbs: Vec<ResponseVerb>,
 }
 
 impl ResponseBuilder<((),)> {

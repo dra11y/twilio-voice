@@ -1,5 +1,7 @@
 #![allow(non_upper_case_globals)]
 
+use crate::{GENERATIVE_VOICE_PRICE, STANDARD_VOICE_PRICE, VoicePrice};
+
 use serde::{Deserialize, Serialize};
 
 pub mod standard {
@@ -15,6 +17,12 @@ pub mod standard {
             StandardA,
             #[serde(rename = "Google.te-IN-Standard-C")]
             StandardC,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
         }
 
         impl From<Female> for crate::Voice {
@@ -34,6 +42,12 @@ pub mod standard {
             StandardD,
         }
 
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
+
         impl From<Male> for crate::Voice {
             fn from(value: Male) -> Self {
                 Self::TeIn(super::super::Voice::Standard(super::Voice::Google(
@@ -48,12 +62,24 @@ pub mod standard {
             Female(Female),
             Male(Male),
         }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
+    }
+
+    impl VoicePrice for Voice {
+        fn price(&self) -> f32 {
+            STANDARD_VOICE_PRICE
+        }
     }
 }
 
@@ -74,6 +100,12 @@ pub mod generative {
             Chirp3HdLeda,
             #[serde(rename = "Google.te-IN-Chirp3-HD-Zephyr")]
             Chirp3HdZephyr,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> f32 {
+                GENERATIVE_VOICE_PRICE
+            }
         }
 
         impl From<Female> for crate::Voice {
@@ -97,6 +129,12 @@ pub mod generative {
             Chirp3HdPuck,
         }
 
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                GENERATIVE_VOICE_PRICE
+            }
+        }
+
         impl From<Male> for crate::Voice {
             fn from(value: Male) -> Self {
                 Self::TeIn(super::super::Voice::Generative(super::Voice::Google(
@@ -111,12 +149,24 @@ pub mod generative {
             Female(Female),
             Male(Male),
         }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> f32 {
+                GENERATIVE_VOICE_PRICE
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
+    }
+
+    impl VoicePrice for Voice {
+        fn price(&self) -> f32 {
+            GENERATIVE_VOICE_PRICE
+        }
     }
 }
 
@@ -125,6 +175,14 @@ pub mod generative {
 pub enum Voice {
     Standard(standard::Voice),
     Generative(generative::Voice),
+}
+impl VoicePrice for Voice {
+    fn price(&self) -> f32 {
+        match self {
+            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+            Voice::Generative(_) => GENERATIVE_VOICE_PRICE,
+        }
+    }
 }
 
 pub mod female {

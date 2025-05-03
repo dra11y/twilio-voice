@@ -10,12 +10,6 @@ pub use say::*;
 mod voices;
 pub use voices::*;
 
-// #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-// #[serde(untagged)]
-// pub enum Voice {
-//     Standard,
-// }
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Serialize, Deserialize)]

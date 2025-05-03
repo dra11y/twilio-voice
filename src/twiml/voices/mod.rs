@@ -1,6 +1,13 @@
-// Auto-generated voice module
-// Source: Twilio documentation
+// Auto-generated at: 2025-05-03 03:03
+// Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
+
+/// Current price of Standard voices per 100 chars as of 2025-05-03 03:03 UTC
+pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
+/// Current price of Neural voices per 100 chars as of 2025-05-03 03:03 UTC
+pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
+/// Current price of Generative voices per 100 chars as of 2025-05-03 03:03 UTC
+pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
 
 #[cfg(feature = "af-za")]
 pub mod af_za;
@@ -136,6 +143,11 @@ pub mod yue_cn;
 pub mod yue_hk;
 
 use serde::{Deserialize, Serialize};
+
+pub trait VoicePrice {
+    /// Cost of the voice per 100 characters (rounded down per call)
+    fn price(&self) -> f32;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
@@ -273,4 +285,143 @@ pub enum Voice {
     YueCn(yue_cn::Voice),
     #[cfg(feature = "yue-hk")]
     YueHk(yue_hk::Voice),
+}
+
+impl VoicePrice for Voice {
+    fn price(&self) -> f32 {
+        match self {
+            #[cfg(feature = "af-za")]
+            Voice::AfZa(af_za) => af_za.price(),
+            #[cfg(feature = "ar-ae")]
+            Voice::ArAe(ar_ae) => ar_ae.price(),
+            #[cfg(feature = "ar-xa")]
+            Voice::ArXa(ar_xa) => ar_xa.price(),
+            #[cfg(feature = "arb")]
+            Voice::Arb(arb) => arb.price(),
+            #[cfg(feature = "bg-bg")]
+            Voice::BgBg(bg_bg) => bg_bg.price(),
+            #[cfg(feature = "bn-in")]
+            Voice::BnIn(bn_in) => bn_in.price(),
+            #[cfg(feature = "ca-es")]
+            Voice::CaEs(ca_es) => ca_es.price(),
+            #[cfg(feature = "cmn-cn")]
+            Voice::CmnCn(cmn_cn) => cmn_cn.price(),
+            #[cfg(feature = "cmn-tw")]
+            Voice::CmnTw(cmn_tw) => cmn_tw.price(),
+            #[cfg(feature = "cs-cz")]
+            Voice::CsCz(cs_cz) => cs_cz.price(),
+            #[cfg(feature = "cy-gb")]
+            Voice::CyGb(cy_gb) => cy_gb.price(),
+            #[cfg(feature = "da-dk")]
+            Voice::DaDk(da_dk) => da_dk.price(),
+            #[cfg(feature = "de-at")]
+            Voice::DeAt(de_at) => de_at.price(),
+            #[cfg(feature = "de-de")]
+            Voice::DeDe(de_de) => de_de.price(),
+            #[cfg(feature = "el-gr")]
+            Voice::ElGr(el_gr) => el_gr.price(),
+            #[cfg(feature = "en-au")]
+            Voice::EnAu(en_au) => en_au.price(),
+            #[cfg(feature = "en-gb")]
+            Voice::EnGb(en_gb) => en_gb.price(),
+            #[cfg(feature = "en-gb-wls")]
+            Voice::EnGbWls(en_gb_wls) => en_gb_wls.price(),
+            #[cfg(feature = "en-ie")]
+            Voice::EnIe(en_ie) => en_ie.price(),
+            #[cfg(feature = "en-in")]
+            Voice::EnIn(en_in) => en_in.price(),
+            #[cfg(feature = "en-nz")]
+            Voice::EnNz(en_nz) => en_nz.price(),
+            #[cfg(feature = "en-us")]
+            Voice::EnUs(en_us) => en_us.price(),
+            #[cfg(feature = "en-za")]
+            Voice::EnZa(en_za) => en_za.price(),
+            #[cfg(feature = "es-es")]
+            Voice::EsEs(es_es) => es_es.price(),
+            #[cfg(feature = "es-mx")]
+            Voice::EsMx(es_mx) => es_mx.price(),
+            #[cfg(feature = "es-us")]
+            Voice::EsUs(es_us) => es_us.price(),
+            #[cfg(feature = "eu-es")]
+            Voice::EuEs(eu_es) => eu_es.price(),
+            #[cfg(feature = "fi-fi")]
+            Voice::FiFi(fi_fi) => fi_fi.price(),
+            #[cfg(feature = "fil-ph")]
+            Voice::FilPh(fil_ph) => fil_ph.price(),
+            #[cfg(feature = "fr-be")]
+            Voice::FrBe(fr_be) => fr_be.price(),
+            #[cfg(feature = "fr-ca")]
+            Voice::FrCa(fr_ca) => fr_ca.price(),
+            #[cfg(feature = "fr-fr")]
+            Voice::FrFr(fr_fr) => fr_fr.price(),
+            #[cfg(feature = "gl-es")]
+            Voice::GlEs(gl_es) => gl_es.price(),
+            #[cfg(feature = "gu-in")]
+            Voice::GuIn(gu_in) => gu_in.price(),
+            #[cfg(feature = "he-il")]
+            Voice::HeIl(he_il) => he_il.price(),
+            #[cfg(feature = "hi-in")]
+            Voice::HiIn(hi_in) => hi_in.price(),
+            #[cfg(feature = "hu-hu")]
+            Voice::HuHu(hu_hu) => hu_hu.price(),
+            #[cfg(feature = "id-id")]
+            Voice::IdId(id_id) => id_id.price(),
+            #[cfg(feature = "is-is")]
+            Voice::IsIs(is_is) => is_is.price(),
+            #[cfg(feature = "it-it")]
+            Voice::ItIt(it_it) => it_it.price(),
+            #[cfg(feature = "ja-jp")]
+            Voice::JaJp(ja_jp) => ja_jp.price(),
+            #[cfg(feature = "kn-in")]
+            Voice::KnIn(kn_in) => kn_in.price(),
+            #[cfg(feature = "ko-kr")]
+            Voice::KoKr(ko_kr) => ko_kr.price(),
+            #[cfg(feature = "lt-lt")]
+            Voice::LtLt(lt_lt) => lt_lt.price(),
+            #[cfg(feature = "lv-lv")]
+            Voice::LvLv(lv_lv) => lv_lv.price(),
+            #[cfg(feature = "ml-in")]
+            Voice::MlIn(ml_in) => ml_in.price(),
+            #[cfg(feature = "mr-in")]
+            Voice::MrIn(mr_in) => mr_in.price(),
+            #[cfg(feature = "ms-my")]
+            Voice::MsMy(ms_my) => ms_my.price(),
+            #[cfg(feature = "nb-no")]
+            Voice::NbNo(nb_no) => nb_no.price(),
+            #[cfg(feature = "nl-be")]
+            Voice::NlBe(nl_be) => nl_be.price(),
+            #[cfg(feature = "nl-nl")]
+            Voice::NlNl(nl_nl) => nl_nl.price(),
+            #[cfg(feature = "pa-in")]
+            Voice::PaIn(pa_in) => pa_in.price(),
+            #[cfg(feature = "pl-pl")]
+            Voice::PlPl(pl_pl) => pl_pl.price(),
+            #[cfg(feature = "pt-br")]
+            Voice::PtBr(pt_br) => pt_br.price(),
+            #[cfg(feature = "pt-pt")]
+            Voice::PtPt(pt_pt) => pt_pt.price(),
+            #[cfg(feature = "ro-ro")]
+            Voice::RoRo(ro_ro) => ro_ro.price(),
+            #[cfg(feature = "ru-ru")]
+            Voice::RuRu(ru_ru) => ru_ru.price(),
+            #[cfg(feature = "sk-sk")]
+            Voice::SkSk(sk_sk) => sk_sk.price(),
+            #[cfg(feature = "sv-se")]
+            Voice::SvSe(sv_se) => sv_se.price(),
+            #[cfg(feature = "ta-in")]
+            Voice::TaIn(ta_in) => ta_in.price(),
+            #[cfg(feature = "te-in")]
+            Voice::TeIn(te_in) => te_in.price(),
+            #[cfg(feature = "th-th")]
+            Voice::ThTh(th_th) => th_th.price(),
+            #[cfg(feature = "tr-tr")]
+            Voice::TrTr(tr_tr) => tr_tr.price(),
+            #[cfg(feature = "vi-vn")]
+            Voice::ViVn(vi_vn) => vi_vn.price(),
+            #[cfg(feature = "yue-cn")]
+            Voice::YueCn(yue_cn) => yue_cn.price(),
+            #[cfg(feature = "yue-hk")]
+            Voice::YueHk(yue_hk) => yue_hk.price(),
+        }
+    }
 }
