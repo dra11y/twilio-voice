@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{KeypadDigit, Pause, Say, TwilioLanguage, TwilioMethod, VoicePrice};
+use super::{Digit, Method, Pause, Say, TwilioLanguage, VoicePrice};
 
 /// TwiML Voice: <Gather>
 /// https://www.twilio.com/docs/voice/twiml/gather
@@ -16,7 +16,7 @@ pub struct Gather {
     pub action_on_empty_result: bool,
     #[serde(rename = "@finishOnKey")]
     #[builder(default)]
-    pub finish_on_key: Option<KeypadDigit>,
+    pub finish_on_key: Option<Digit>,
     #[serde(rename = "@hints")]
     #[builder(default, setter(strip_option))]
     pub hints: Option<String>,
@@ -28,7 +28,7 @@ pub struct Gather {
     pub language: TwilioLanguage,
     #[serde(rename = "@method")]
     #[builder(default)]
-    pub method: TwilioMethod,
+    pub method: Method,
     #[serde(rename = "@numDigits")]
     #[builder(default, setter(strip_option))]
     pub num_digits: Option<u8>,
@@ -37,7 +37,7 @@ pub struct Gather {
     pub partial_result_callback: Option<String>,
     #[serde(rename = "@partialResultCallbackMethod")]
     #[builder(default, setter(strip_option))]
-    pub partial_result_callback_method: Option<TwilioMethod>,
+    pub partial_result_callback_method: Option<Method>,
     #[serde(rename = "@profanityFilter")]
     #[builder(default, setter(strip_option))]
     pub profanity_filter: Option<bool>,
@@ -79,7 +79,9 @@ pub enum InputType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Timeout {
+    #[serde(rename = "auto")]
     Auto,
+    #[serde(untagged)]
     Seconds(u8),
 }
 

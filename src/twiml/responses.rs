@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{Gather, Say, TwilioMethod, VoicePrice};
+use super::{Gather, Method, Say, VoicePrice};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResponseVerb {
@@ -43,37 +43,37 @@ impl ResponseBuilder<((),)> {
     pub fn pause(self, pause: Pause) -> ResponseBuilder<((Vec<ResponseVerb>,),)> {
         self.verbs(vec![ResponseVerb::Pause(pause)])
     }
+
+    pub fn hangup(self) -> ResponseBuilder<((Vec<ResponseVerb>,),)> {
+        self.verbs(vec![ResponseVerb::Hangup])
+    }
 }
 
 impl ResponseBuilder<((Vec<ResponseVerb>,),)> {
-    pub fn say(self, say: Say) -> Self {
+    fn add_verb(self, verb: ResponseVerb) -> Self {
         let ((mut verbs,),) = self.fields;
-        verbs.push(ResponseVerb::Say(say));
+        verbs.push(verb);
 
         ResponseBuilder {
             fields: ((verbs,),),
             phantom: self.phantom,
         }
+    }
+
+    pub fn say(self, say: Say) -> Self {
+        self.add_verb(ResponseVerb::Say(say))
     }
 
     pub fn gather(self, gather: Gather) -> Self {
-        let ((mut verbs,),) = self.fields;
-        verbs.push(ResponseVerb::Gather(gather));
-
-        ResponseBuilder {
-            fields: ((verbs,),),
-            phantom: self.phantom,
-        }
+        self.add_verb(ResponseVerb::Gather(gather))
     }
 
     pub fn pause(self, pause: Pause) -> Self {
-        let ((mut verbs,),) = self.fields;
-        verbs.push(ResponseVerb::Pause(pause));
+        self.add_verb(ResponseVerb::Pause(pause))
+    }
 
-        ResponseBuilder {
-            fields: ((verbs,),),
-            phantom: self.phantom,
-        }
+    pub fn hangup(self) -> Self {
+        self.add_verb(ResponseVerb::Hangup)
     }
 }
 
@@ -90,5 +90,5 @@ pub struct Pause {
 #[derive(Debug, Clone, TypedBuilder, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Redirect {
     #[serde(rename = "@method")]
-    method: TwilioMethod,
+    method: Method,
 }
