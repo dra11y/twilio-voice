@@ -69,17 +69,8 @@ fn parse_html_into_voices(html: String) -> HashSet<VoiceData> {
             .trim()
             .replace(['(', ')'], " ")
             .to_case(Case::Pascal);
-        if gender.contains("child") {
-            println!("GENDER: {gender}");
-        }
-        if gender.is_empty() {
-            continue;
-        }
 
         let provider = cells[4].text().collect::<String>().trim().to_string();
-        if provider.is_empty() {
-            continue;
-        }
 
         let voice_name = cells[5]
             .text()
@@ -149,16 +140,91 @@ fn generate_voice_module_structure(voices: &HashSet<VoiceData>) -> Result<(), Bo
     Ok(())
 }
 
+fn generate_gender_aliases(
+    lang_file: &mut String,
+    type_groups: &HashMap<String, Vec<&VoiceData>>,
+) -> Result<(), Box<dyn Error>> {
+    // Collect all genders first
+    let mut all_genders = HashSet::new();
+    for voices in type_groups.values() {
+        for voice in voices {
+            all_genders.insert(voice.gender.clone());
+        }
+    }
+
+    let mut all_genders: Vec<String> = all_genders.into_iter().collect();
+    all_genders.sort();
+
+    // For each gender, generate alias modules
+    for gender in all_genders {
+        writeln!(lang_file, "\npub mod {} {{", gender.to_case(Case::Snake))?;
+
+        // For each voice type that has this gender
+        for (voice_type, voices) in type_groups {
+            // Check if this voice type has voices of the current gender
+            let voices_with_gender: Vec<_> = voices.iter().filter(|v| v.gender == gender).collect();
+
+            if voices_with_gender.is_empty() {
+                continue;
+            }
+
+            let voice_type_module = voice_type.to_case(Case::Snake);
+
+            writeln!(lang_file, "    pub mod {voice_type_module} {{",)?;
+
+            // Group by provider
+            let mut provider_map: HashMap<String, Vec<&&VoiceData>> = HashMap::new();
+            for voice in &voices_with_gender {
+                provider_map
+                    .entry(voice.provider.clone())
+                    .or_default()
+                    .push(voice);
+            }
+
+            // For each provider
+            for (provider, provider_voices) in provider_map {
+                let provider_module = provider.to_case(Case::Snake);
+                writeln!(lang_file, "        pub mod {provider_module} {{",)?;
+                writeln!(
+                    lang_file,
+                    "            use super::super::super::{voice_type_module}::{provider_module}::*;",
+                )?;
+
+                // For each voice in this provider/gender combo
+                let mut voices: Vec<_> = provider_voices
+                    .iter()
+                    .map(|v| extract_short_name(&v.voice_name))
+                    .collect();
+                voices.sort();
+
+                for voice in &voices {
+                    writeln!(
+                        lang_file,
+                        "            pub const {voice}: {gender} = {gender}::{voice};",
+                    )?;
+                }
+
+                writeln!(lang_file, "        }}")?;
+            }
+
+            writeln!(lang_file, "    }}")?;
+        }
+
+        writeln!(lang_file, "}}")?;
+    }
+
+    Ok(())
+}
+
 fn generate_lang_file(
     lang_code: &str,
     voices_in_lang: &[&VoiceData],
 ) -> Result<(), Box<dyn Error>> {
-    println!("generate_lang_file: {lang_code}");
-    // println!("voices_in_lang: {voices_in_lang:#?}");
     let module_name = lang_code.to_case(Case::Snake);
     let lang_variant = lang_code.to_case(Case::Pascal);
 
     let mut lang_file = String::new();
+    writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
     writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
     let mut type_groups: HashMap<String, Vec<&VoiceData>> = HashMap::new();
@@ -171,7 +237,7 @@ fn generate_lang_file(
     }
 
     for (voice_type, voices_of_type) in &type_groups {
-        let type_module = voice_type.to_lowercase();
+        let type_module = voice_type.to_case(Case::Snake);
         writeln!(lang_file, "pub mod {type_module} {{\n    use super::*;\n")?;
 
         let mut provider_groups: HashMap<String, Vec<&&VoiceData>> = HashMap::new();
@@ -183,7 +249,7 @@ fn generate_lang_file(
         }
 
         for (provider, voices_by_provider) in &provider_groups {
-            let provider_module = provider.to_lowercase();
+            let provider_module = provider.to_case(Case::Snake);
 
             let mut gender_maps: HashMap<&str, HashMap<String, String>> = HashMap::new();
 
@@ -204,8 +270,6 @@ fn generate_lang_file(
                     );
                 }
             }
-
-            println!("gender_maps provider={provider}: {gender_maps:#?}");
 
             writeln!(
                 lang_file,
@@ -270,7 +334,7 @@ fn generate_lang_file(
                 continue;
             }
 
-            let provider_module = provider.to_lowercase();
+            let provider_module = provider.to_case(Case::Snake);
             let variant_name = provider_module.to_case(Case::Pascal);
             writeln!(
                 lang_file,
@@ -294,10 +358,13 @@ fn generate_lang_file(
         writeln!(
             lang_file,
             "    {variant_name}({}::Voice),",
-            voice_type.to_lowercase()
+            voice_type.to_case(Case::Snake)
         )?;
     }
     writeln!(lang_file, "}}")?;
+
+    generate_gender_aliases(&mut lang_file, &type_groups)?;
+
     File::create(Path::new(DIR_PATH).join(format!("{module_name}.rs")))?
         .write_all(lang_file.as_bytes())?;
     Ok(())
@@ -322,8 +389,9 @@ fn generate_main_file(
     let mut lang_codes: Vec<_> = lang_groups.keys().collect();
     lang_codes.sort();
     for lang_code in &lang_codes {
-        let module_name = lang_code.replace('-', "_").to_lowercase();
-        writeln!(main_file, "#[cfg(feature = \"{module_name}\")]")?;
+        let module_name = lang_code.to_case(Case::Snake);
+        let feature_name = lang_code.to_case(Case::Kebab);
+        writeln!(main_file, "#[cfg(feature = \"{feature_name}\")]")?;
         writeln!(main_file, "pub mod {module_name};")?;
     }
     writeln!(main_file, "\nuse serde::{{Serialize, Deserialize}};\n")?;
@@ -334,9 +402,10 @@ fn generate_main_file(
     writeln!(main_file, "#[serde(untagged)]\n#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
     for lang_code in &lang_codes {
-        let module_name = lang_code.replace('-', "_").to_lowercase();
+        let module_name = lang_code.to_case(Case::Snake);
         let variant_name = module_name.to_case(Case::Pascal);
-        writeln!(main_file, "    #[cfg(feature = \"{module_name}\")]")?;
+        let feature_name = lang_code.to_case(Case::Kebab);
+        writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
         writeln!(main_file, "    {variant_name}({module_name}::Voice),")?;
     }
     writeln!(main_file, "}}")?;
