@@ -73,7 +73,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text("Hello".to_string())
-                    .voice(voices::en_us::generative::google::Male::Chirp3HDCharon.into())
+                    .voice(voices::en_us::male::generative::google::Chirp3HdCharon.into())
                     .build(),
             )
             .build();

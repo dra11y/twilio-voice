@@ -1,4 +1,6 @@
-use serde::{Serialize, Deserialize};
+#![allow(non_upper_case_globals)]
+
+use serde::{Deserialize, Serialize};
 
 pub mod standard {
     use super::*;
@@ -8,22 +10,6 @@ pub mod standard {
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.es-US-Standard-A")]
-            StandardA,
-        }
-
-
-                            impl From<Female> for crate::Voice {
-                                fn from(value: Female) -> Self {
-                                    Self::EsUs(super::super::Voice::Standard(super::Voice::Google(
-                                        Voice::Female(value),
-                                    )))
-                                }
-                            }
-                        
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.es-US-Standard-B")]
             StandardB,
@@ -31,20 +17,34 @@ pub mod standard {
             StandardC,
         }
 
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
 
-                            impl From<Male> for crate::Voice {
-                                fn from(value: Male) -> Self {
-                                    Self::EsUs(super::super::Voice::Standard(super::Voice::Google(
-                                        Voice::Male(value),
-                                    )))
-                                }
-                            }
-                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.es-US-Standard-A")]
+            StandardA,
+        }
+
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
             Male(Male),
+            Female(Female),
         }
     }
 
@@ -52,8 +52,44 @@ pub mod standard {
         use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Polly.Lupe")]
+            Lupe,
+            #[serde(rename = "Polly.Penelope")]
+            Penelope,
+            #[serde(rename = "Polly.Penélope")]
+            Penélope,
+        }
+
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Standard(super::Voice::Polly(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Polly.Miguel")]
+            Miguel,
+        }
+
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Standard(super::Voice::Polly(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
+            Female(Female),
+            Male(Male),
         }
     }
 
@@ -68,27 +104,50 @@ pub mod standard {
 pub mod neural {
     use super::*;
 
-    pub mod google {
+    pub mod polly {
         use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
-            #[serde(rename = "Google.es-US-Neural2-A")]
-            Neural2A,
-            #[serde(rename = "Google.es-US-Wavenet-A")]
-            WavenetA,
+            #[serde(rename = "Polly.Lupe-Neural")]
+            LupeNeural,
         }
 
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Neural(super::Voice::Polly(
+                    Voice::Female(value),
+                )))
+            }
+        }
 
-                            impl From<Female> for crate::Voice {
-                                fn from(value: Female) -> Self {
-                                    Self::EsUs(super::super::Voice::Neural(super::Voice::Google(
-                                        Voice::Female(value),
-                                    )))
-                                }
-                            }
-                        
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Polly.Pedro-Neural")]
+            PedroNeural,
+        }
+
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Neural(super::Voice::Polly(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Female(Female),
+            Male(Male),
+        }
+    }
+
+    pub mod google {
+        use super::*;
+
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
@@ -102,51 +161,49 @@ pub mod neural {
             WavenetC,
         }
 
-
-                            impl From<Male> for crate::Voice {
-                                fn from(value: Male) -> Self {
-                                    Self::EsUs(super::super::Voice::Neural(super::Voice::Google(
-                                        Voice::Male(value),
-                                    )))
-                                }
-                            }
-                        
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Neural(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
         }
-    }
 
-    pub mod polly {
-        use super::*;
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.es-US-Neural2-A")]
+            Neural2A,
+            #[serde(rename = "Google.es-US-Wavenet-A")]
+            WavenetA,
+        }
+
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Neural(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
+            Male(Male),
+            Female(Female),
         }
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Google(google::Voice),
         Polly(polly::Voice),
+        Google(google::Voice),
     }
 }
 
 pub mod generative {
     use super::*;
-
-    pub mod polly {
-        use super::*;
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-        }
-    }
 
     pub mod google {
         use super::*;
@@ -155,46 +212,44 @@ pub mod generative {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.es-US-Chirp3-HD-Aoede")]
-            Chirp3HDAoede,
+            Chirp3HdAoede,
             #[serde(rename = "Google.es-US-Chirp3-HD-Kore")]
-            Chirp3HDKore,
+            Chirp3HdKore,
             #[serde(rename = "Google.es-US-Chirp3-HD-Leda")]
-            Chirp3HDLeda,
+            Chirp3HdLeda,
             #[serde(rename = "Google.es-US-Chirp3-HD-Zephyr")]
-            Chirp3HDZephyr,
+            Chirp3HdZephyr,
         }
 
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Generative(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
 
-                            impl From<Female> for crate::Voice {
-                                fn from(value: Female) -> Self {
-                                    Self::EsUs(super::super::Voice::Generative(super::Voice::Google(
-                                        Voice::Female(value),
-                                    )))
-                                }
-                            }
-                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.es-US-Chirp3-HD-Charon")]
-            Chirp3HDCharon,
+            Chirp3HdCharon,
             #[serde(rename = "Google.es-US-Chirp3-HD-Fenrir")]
-            Chirp3HDFenrir,
+            Chirp3HdFenrir,
             #[serde(rename = "Google.es-US-Chirp3-HD-Orus")]
-            Chirp3HDOrus,
+            Chirp3HdOrus,
             #[serde(rename = "Google.es-US-Chirp3-HD-Puck")]
-            Chirp3HDPuck,
+            Chirp3HdPuck,
         }
 
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Generative(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
 
-                            impl From<Male> for crate::Voice {
-                                fn from(value: Male) -> Self {
-                                    Self::EsUs(super::super::Voice::Generative(super::Voice::Google(
-                                        Voice::Male(value),
-                                    )))
-                                }
-                            }
-                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -203,11 +258,52 @@ pub mod generative {
         }
     }
 
+    pub mod polly {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Polly.Pedro-Generative")]
+            PedroGenerative,
+        }
+
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::EsUs(super::super::Voice::Generative(super::Voice::Polly(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Polly.Lupe-Generative")]
+            LupeGenerative,
+        }
+
+        impl From<Female> for crate::Voice {
+            fn from(value: Female) -> Self {
+                Self::EsUs(super::super::Voice::Generative(super::Voice::Polly(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Male(Male),
+            Female(Female),
+        }
+    }
+
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Polly(polly::Voice),
         Google(google::Voice),
+        Polly(polly::Voice),
     }
 }
 
@@ -217,4 +313,83 @@ pub enum Voice {
     Standard(standard::Voice),
     Neural(neural::Voice),
     Generative(generative::Voice),
+}
+
+pub mod female {
+    pub mod standard {
+        pub mod google {
+            use super::super::super::standard::google::*;
+            pub const StandardA: Female = Female::StandardA;
+        }
+        pub mod polly {
+            use super::super::super::standard::polly::*;
+            pub const Lupe: Female = Female::Lupe;
+            pub const Penelope: Female = Female::Penelope;
+            pub const Penélope: Female = Female::Penélope;
+        }
+    }
+    pub mod neural {
+        pub mod polly {
+            use super::super::super::neural::polly::*;
+            pub const LupeNeural: Female = Female::LupeNeural;
+        }
+        pub mod google {
+            use super::super::super::neural::google::*;
+            pub const Neural2A: Female = Female::Neural2A;
+            pub const WavenetA: Female = Female::WavenetA;
+        }
+    }
+    pub mod generative {
+        pub mod polly {
+            use super::super::super::generative::polly::*;
+            pub const LupeGenerative: Female = Female::LupeGenerative;
+        }
+        pub mod google {
+            use super::super::super::generative::google::*;
+            pub const Chirp3HdAoede: Female = Female::Chirp3HdAoede;
+            pub const Chirp3HdKore: Female = Female::Chirp3HdKore;
+            pub const Chirp3HdLeda: Female = Female::Chirp3HdLeda;
+            pub const Chirp3HdZephyr: Female = Female::Chirp3HdZephyr;
+        }
+    }
+}
+
+pub mod male {
+    pub mod standard {
+        pub mod polly {
+            use super::super::super::standard::polly::*;
+            pub const Miguel: Male = Male::Miguel;
+        }
+        pub mod google {
+            use super::super::super::standard::google::*;
+            pub const StandardB: Male = Male::StandardB;
+            pub const StandardC: Male = Male::StandardC;
+        }
+    }
+    pub mod neural {
+        pub mod google {
+            use super::super::super::neural::google::*;
+            pub const Neural2B: Male = Male::Neural2B;
+            pub const Neural2C: Male = Male::Neural2C;
+            pub const WavenetB: Male = Male::WavenetB;
+            pub const WavenetC: Male = Male::WavenetC;
+        }
+        pub mod polly {
+            use super::super::super::neural::polly::*;
+            pub const PedroNeural: Male = Male::PedroNeural;
+        }
+    }
+    pub mod generative {
+        pub mod polly {
+            use super::super::super::generative::polly::*;
+            pub const PedroGenerative: Male = Male::PedroGenerative;
+        }
+        pub mod google {
+            use super::super::super::generative::google::*;
+            pub const Chirp3HdCharon: Male = Male::Chirp3HdCharon;
+            pub const Chirp3HdFenrir: Male = Male::Chirp3HdFenrir;
+            pub const Chirp3HdOrus: Male = Male::Chirp3HdOrus;
+            pub const Chirp3HdPuck: Male = Male::Chirp3HdPuck;
+        }
+    }
 }

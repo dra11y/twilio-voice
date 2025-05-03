@@ -8,156 +8,156 @@ edition = "2024"
 
 [features]
 all = [
-    "af_za",
-    "ar_ae",
-    "ar_xa",
+    "af-za",
+    "ar-ae",
+    "ar-xa",
     "arb",
-    "bg_bg",
-    "bn_in",
-    "ca_es",
-    "cmn_cn",
-    "cmn_tw",
-    "cs_cz",
-    "cy_gb",
-    "da_dk",
-    "de_at",
-    "de_de",
-    "el_gr",
-    "en_au",
-    "en_gb_wls",
-    "en_gb",
-    "en_ie",
-    "en_in",
-    "en_nz",
-    "en_us",
-    "en_za",
-    "es_es",
-    "es_mx",
-    "es_us",
-    "eu_es",
-    "fi_fi",
-    "fil_ph",
-    "fr_be",
-    "fr_ca",
-    "fr_fr",
-    "gl_es",
-    "gu_in",
-    "he_il",
-    "hi_in",
-    "hu_hu",
-    "id_id",
-    "is_is",
-    "it_it",
-    "ja_jp",
-    "kn_in",
-    "ko_kr",
-    "lt_lt",
-    "lv_lv",
-    "ml_in",
-    "mr_in",
-    "ms_my",
-    "nb_no",
-    "nl_be",
-    "nl_nl",
-    "pa_in",
-    "pl_pl",
-    "pt_br",
-    "pt_pt",
-    "ro_ro",
-    "ru_ru",
-    "sk_sk",
-    "sv_se",
-    "ta_in",
-    "te_in",
-    "th_th",
-    "tr_tr",
-    "vi_vn",
-    "yue_cn",
-    "yue_hk",
+    "bg-bg",
+    "bn-in",
+    "ca-es",
+    "cmn-cn",
+    "cmn-tw",
+    "cs-cz",
+    "cy-gb",
+    "da-dk",
+    "de-at",
+    "de-de",
+    "el-gr",
+    "en-au",
+    "en-gb-wls",
+    "en-gb",
+    "en-ie",
+    "en-in",
+    "en-nz",
+    "en-us",
+    "en-za",
+    "es-es",
+    "es-mx",
+    "es-us",
+    "eu-es",
+    "fi-fi",
+    "fil-ph",
+    "fr-be",
+    "fr-ca",
+    "fr-fr",
+    "gl-es",
+    "gu-in",
+    "he-il",
+    "hi-in",
+    "hu-hu",
+    "id-id",
+    "is-is",
+    "it-it",
+    "ja-jp",
+    "kn-in",
+    "ko-kr",
+    "lt-lt",
+    "lv-lv",
+    "ml-in",
+    "mr-in",
+    "ms-my",
+    "nb-no",
+    "nl-be",
+    "nl-nl",
+    "pa-in",
+    "pl-pl",
+    "pt-br",
+    "pt-pt",
+    "ro-ro",
+    "ru-ru",
+    "sk-sk",
+    "sv-se",
+    "ta-in",
+    "te-in",
+    "th-th",
+    "tr-tr",
+    "vi-vn",
+    "yue-cn",
+    "yue-hk",
 ]
-af_za = []
-ar_ae = []
-ar_xa = []
+af-za = []
+ar-ae = []
+ar-xa = []
 arb = []
-bg_bg = []
-bn_in = []
-ca_es = []
-cmn = ["cmn_cn", "cmn_tw"]
-cmn_cn = []
-cmn_tw = []
-cs_cz = []
-cy_gb = []
-da_dk = []
-de = ["de_at", "de_de"]
-de_at = []
-de_de = []
-el_gr = []
+bg-bg = []
+bn-in = []
+ca-es = []
+cmn = ["cmn-cn", "cmn-tw"]
+cmn-cn = []
+cmn-tw = []
+cs-cz = []
+cy-gb = []
+da-dk = []
+de = ["de-at", "de-de"]
+de-at = []
+de-de = []
+el-gr = []
 en = [
-    "en_au",
-    "en_gb_wls",
-    "en_gb",
-    "en_ie",
-    "en_in",
-    "en_nz",
-    "en_us",
-    "en_za",
+    "en-au",
+    "en-gb-wls",
+    "en-gb",
+    "en-ie",
+    "en-in",
+    "en-nz",
+    "en-us",
+    "en-za",
 ]
-en_au = []
-en_gb_wls = []
-en_gb = []
-en_ie = []
-en_in = []
-en_nz = []
-en_us = []
-en_za = []
-es = ["es_es", "es_mx", "es_us"]
-es_es = []
-es_mx = []
-es_us = []
-eu_es = []
-fi_fi = []
-fil_ph = []
-fr = ["fr_be", "fr_ca", "fr_fr"]
-fr_be = []
-fr_ca = []
-fr_fr = []
-gl_es = []
-gu_in = []
-he_il = []
-hi_in = []
-hu_hu = []
-id_id = []
-is_is = []
-it_it = []
-ja_jp = []
-kn_in = []
-ko_kr = []
-lt_lt = []
-lv_lv = []
-ml_in = []
-mr_in = []
-ms_my = []
-nb_no = []
-nl = ["nl_be", "nl_nl"]
-nl_be = []
-nl_nl = []
-pa_in = []
-pl_pl = []
-pt = ["pt_br", "pt_pt"]
-pt_br = []
-pt_pt = []
-ro_ro = []
-ru_ru = []
-sk_sk = []
-sv_se = []
-ta_in = []
-te_in = []
-th_th = []
-tr_tr = []
-vi_vn = []
-yue = ["yue_cn", "yue_hk"]
-yue_cn = []
-yue_hk = []
+en-au = []
+en-gb-wls = []
+en-gb = []
+en-ie = []
+en-in = []
+en-nz = []
+en-us = []
+en-za = []
+es = ["es-es", "es-mx", "es-us"]
+es-es = []
+es-mx = []
+es-us = []
+eu-es = []
+fi-fi = []
+fil-ph = []
+fr = ["fr-be", "fr-ca", "fr-fr"]
+fr-be = []
+fr-ca = []
+fr-fr = []
+gl-es = []
+gu-in = []
+he-il = []
+hi-in = []
+hu-hu = []
+id-id = []
+is-is = []
+it-it = []
+ja-jp = []
+kn-in = []
+ko-kr = []
+lt-lt = []
+lv-lv = []
+ml-in = []
+mr-in = []
+ms-my = []
+nb-no = []
+nl = ["nl-be", "nl-nl"]
+nl-be = []
+nl-nl = []
+pa-in = []
+pl-pl = []
+pt = ["pt-br", "pt-pt"]
+pt-br = []
+pt-pt = []
+ro-ro = []
+ru-ru = []
+sk-sk = []
+sv-se = []
+ta-in = []
+te-in = []
+th-th = []
+tr-tr = []
+vi-vn = []
+yue = ["yue-cn", "yue-hk"]
+yue-cn = []
+yue-hk = []
 
 [dependencies]
 base64 = "0.22.1"

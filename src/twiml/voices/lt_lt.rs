@@ -1,4 +1,6 @@
-use serde::{Serialize, Deserialize};
+#![allow(non_upper_case_globals)]
+
+use serde::{Deserialize, Serialize};
 
 pub mod standard {
     use super::*;
@@ -13,15 +15,14 @@ pub mod standard {
             StandardB,
         }
 
+        impl From<Male> for crate::Voice {
+            fn from(value: Male) -> Self {
+                Self::LtLt(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
 
-                            impl From<Male> for crate::Voice {
-                                fn from(value: Male) -> Self {
-                                    Self::LtLt(super::super::Voice::Standard(super::Voice::Google(
-                                        Voice::Male(value),
-                                    )))
-                                }
-                            }
-                        
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
@@ -40,4 +41,13 @@ pub mod standard {
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
+}
+
+pub mod male {
+    pub mod standard {
+        pub mod google {
+            use super::super::super::standard::google::*;
+            pub const StandardB: Male = Male::StandardB;
+        }
+    }
 }
