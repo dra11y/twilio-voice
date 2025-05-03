@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{KeypadDigit, Pause, Say, TwilioLanguage, TwilioMethod};
+use super::{KeypadDigit, Pause, Say, TwilioLanguage, TwilioMethod, VoicePrice};
 
 /// TwiML Voice: <Gather>
 /// https://www.twilio.com/docs/voice/twiml/gather
@@ -10,50 +10,62 @@ use super::{KeypadDigit, Pause, Say, TwilioLanguage, TwilioMethod};
 pub struct Gather {
     #[serde(rename = "@action")]
     #[builder(default)]
-    action: String,
+    pub action: String,
     #[serde(rename = "@actionOnEmptyResult")]
     #[builder(default)]
-    action_on_empty_result: bool,
+    pub action_on_empty_result: bool,
     #[serde(rename = "@finishOnKey")]
     #[builder(default)]
-    finish_on_key: Option<KeypadDigit>,
+    pub finish_on_key: Option<KeypadDigit>,
     #[serde(rename = "@hints")]
     #[builder(default, setter(strip_option))]
-    hints: Option<String>,
+    pub hints: Option<String>,
     #[serde(rename = "@input")]
     #[builder(default)]
-    input: InputType,
+    pub input: InputType,
     #[serde(rename = "@language")]
     #[builder(default)]
-    language: TwilioLanguage,
+    pub language: TwilioLanguage,
     #[serde(rename = "@method")]
     #[builder(default)]
-    method: TwilioMethod,
+    pub method: TwilioMethod,
     #[serde(rename = "@numDigits")]
     #[builder(default, setter(strip_option))]
-    num_digits: Option<u8>,
+    pub num_digits: Option<u8>,
     #[serde(rename = "@partialResultCallback")]
     #[builder(default, setter(strip_option))]
-    partial_result_callback: Option<String>,
+    pub partial_result_callback: Option<String>,
     #[serde(rename = "@partialResultCallbackMethod")]
     #[builder(default, setter(strip_option))]
-    partial_result_callback_method: Option<TwilioMethod>,
+    pub partial_result_callback_method: Option<TwilioMethod>,
     #[serde(rename = "@profanityFilter")]
     #[builder(default, setter(strip_option))]
-    profanity_filter: Option<bool>,
+    pub profanity_filter: Option<bool>,
     #[serde(rename = "@speechModel")]
     #[builder(default, setter(strip_option))]
-    speech_model: Option<SpeechModel>,
+    pub speech_model: Option<SpeechModel>,
     #[serde(rename = "@speechTimeout")]
     #[builder(default, setter(strip_option))]
-    speech_timeout: Option<Timeout>,
+    pub speech_timeout: Option<Timeout>,
     #[serde(rename = "@timeout")]
     #[builder(default, setter(strip_option))]
-    timeout: Option<Timeout>,
+    pub timeout: Option<Timeout>,
 
     #[builder(default)]
     #[serde(default, rename = "$value")]
-    verbs: Vec<GatherVerb>,
+    pub verbs: Vec<GatherVerb>,
+}
+
+impl VoicePrice for Gather {
+    fn price(&self) -> f32 {
+        self.verbs
+            .iter()
+            .filter_map(|v| match v {
+                GatherVerb::Say(say) => Some(say.price()),
+                _ => None,
+            })
+            .sum()
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -79,6 +79,23 @@ mod tests {
     }
 
     #[test]
+    fn test_deserialize_say() {
+        let text = "Excepteur et labore in excepteur enim nisi tempor. Commodo ex eiusmod incididunt occaecat commodo dolor consequat. Consectetur laboris velit dolore tempor Lorem adipisicing anim occaecat.";
+        let xml = format!(
+            r#"<Response><Say language="en-US" voice="Google.en-US-Chirp3-HD-Charon" loop="1">{text}</Say></Response>"#
+        );
+        let response: Response = quick_xml::de::from_str(&xml).unwrap();
+        // println!("RESPONSE:\n{response:#?}");
+        // println!("PRICE: {}", response.price());
+        assert_eq!(response.price(), 0.013);
+        let say: Say = match &response.verbs[0] {
+            ResponseVerb::Say(say) => say.clone(),
+            _ => unreachable!(),
+        };
+        assert_eq!(say.text, text);
+    }
+
+    #[test]
     fn test_gather() {
         let say = Say::builder()
             .text("Press 1 for sales, 2 for support.".to_string())

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{Gather, Say, TwilioMethod};
+use super::{Gather, Say, TwilioMethod, VoicePrice};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ResponseVerb {
@@ -16,6 +16,19 @@ pub enum ResponseVerb {
 pub struct Response {
     #[serde(rename = "$value")]
     pub verbs: Vec<ResponseVerb>,
+}
+
+impl VoicePrice for Response {
+    fn price(&self) -> f32 {
+        self.verbs
+            .iter()
+            .filter_map(|v| match v {
+                ResponseVerb::Say(say) => Some(say.price()),
+                ResponseVerb::Gather(gather) => Some(gather.price()),
+                _ => None,
+            })
+            .sum()
+    }
 }
 
 impl ResponseBuilder<((),)> {
