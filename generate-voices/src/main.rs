@@ -10,6 +10,7 @@ use convert_case::{Case, Casing};
 use headless_chrome::{Browser, LaunchOptions};
 use scraper::{Html, Selector};
 
+/// Entry point: fetches Twilio voice data and generates voice module files
 fn main() {
     let result = fetch_and_generate_voice_modules();
     match result {
@@ -18,11 +19,15 @@ fn main() {
     }
 }
 
+/// Output directory for generated voice modules
 const DIR_PATH: &str = "../src/twiml/voices";
+/// Twilio documentation page containing voice data
 const TWILIO_DOC_URL: &str =
     "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
+/// Common Rust derive macros for voice enums
 const ENUM_DERIVE: &str = "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]";
 
+/// Represents a single voice option with its metadata
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct VoiceData {
     language_code: String,
@@ -32,6 +37,7 @@ struct VoiceData {
     voice_name: String,
 }
 
+/// Orchestrates the entire voice module generation process
 fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
     let html = fetch_html()?;
     let (pricing, all_voices) = parse_html_into_voices(html);
@@ -45,6 +51,7 @@ fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Extracts voice data and pricing information from Twilio's documentation HTML
 fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceData>) {
     let document = Html::parse_document(&html);
     let row_selector = Selector::parse("table tbody tr").unwrap();
@@ -57,6 +64,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
     let table_selector = Selector::parse("table").unwrap();
     let header_selector = Selector::parse("th").unwrap();
 
+    // First extract pricing information from tables containing price data
     for table in document.select(&table_selector) {
         // Check if this is a pricing table by examining headers
         let headers: Vec<_> = table.select(&header_selector).collect();
@@ -73,7 +81,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
             continue;
         }
 
-        // extract the base pricing tier
+        // extract the base pricing tier (starting from 0 characters)
         for row in table.select(&row_selector) {
             let cells: Vec<_> = row.select(&cell_selector).collect();
             if cells.len() < 3 {
@@ -90,6 +98,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
                     .parse::<f32>()
                     .expect("failed to parse expected price");
 
+                // Navigate up to find the section ID to determine voice type (Standard/Neural/Generative)
                 let mut parent = table.parent();
                 while let Some(node) = parent {
                     if let Some(element) = node.value().as_element() {
@@ -113,6 +122,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
         }
     }
 
+    // Then extract voice data from voice tables
     let mut all_voices = HashSet::new();
     for row in document.select(&row_selector) {
         let cells: Vec<_> = row.select(&cell_selector).collect();
@@ -161,47 +171,53 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
     (pricing, all_voices)
 }
 
+/// Fetches HTML from Twilio docs using headless Chrome
+/// Uses a local cache to avoid refetching the same page multiple times per day
 fn fetch_html() -> Result<String, Box<dyn Error>> {
     let today = chrono::Local::now().format("%Y%m%d").to_string();
     let cache_path = format!("/tmp/voices_{today}.html");
-    let html = if Path::new(&cache_path).exists() {
+
+    // Check for cached version first
+    if Path::new(&cache_path).exists() {
         println!("Using cached HTML file: {cache_path}");
         let mut file = File::open(&cache_path)?;
         let mut html_content = String::new();
         file.read_to_string(&mut html_content)?;
-        html_content
-    } else {
-        println!("Cache not found, fetching from web...");
-        let options = LaunchOptions {
-            headless: true,
-            ..Default::default()
-        };
-        let browser = Browser::new(options)?;
-        let tab = browser.new_tab()?;
+        return Ok(html_content);
+    }
 
-        tab.navigate_to(TWILIO_DOC_URL)?;
-        println!("Waiting for page to load and JavaScript to execute...");
-        tab.wait_for_element("table tbody tr")?;
-        std::thread::sleep(std::time::Duration::from_secs(5));
-
-        let html_content = tab.get_content()?;
-        let mut cache_file = File::create(&cache_path)?;
-        cache_file.write_all(html_content.as_bytes())?;
-        println!("Cached HTML to: {cache_path}");
-
-        html_content
+    println!("Cache not found, fetching from web...");
+    let options = LaunchOptions {
+        headless: true,
+        ..Default::default()
     };
-    Ok(html)
+    let browser = Browser::new(options)?;
+    let tab = browser.new_tab()?;
+
+    tab.navigate_to(TWILIO_DOC_URL)?;
+    println!("Waiting for page to load and JavaScript to execute...");
+    tab.wait_for_element("table tbody tr")?;
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
+    let html_content = tab.get_content()?;
+    let mut cache_file = File::create(&cache_path)?;
+    cache_file.write_all(html_content.as_bytes())?;
+    println!("Cached HTML to: {cache_path}");
+
+    Ok(html_content)
 }
 
+/// Creates the directory structure and generates all voice module files
 fn generate_voice_module_structure(
     pricing: HashMap<String, f32>,
     voices: &HashSet<VoiceData>,
 ) -> Result<(), Box<dyn Error>> {
     std::fs::create_dir_all(DIR_PATH)?;
 
+    // Generate main mod.rs first, which returns language groups for further processing
     let lang_groups = generate_main_file(pricing, voices)?;
 
+    // Then generate a module file for each language
     for (lang_code, voices_in_lang) in &lang_groups {
         generate_lang_file(lang_code, voices_in_lang)?;
     }
@@ -209,6 +225,7 @@ fn generate_voice_module_structure(
     Ok(())
 }
 
+/// Generates gender alias convenience modules
 fn generate_gender_aliases(
     lang_file: &mut String,
     type_groups: &HashMap<String, Vec<&VoiceData>>,
@@ -279,6 +296,7 @@ fn generate_gender_aliases(
     Ok(())
 }
 
+/// Generates a language-specific module file with voice types, providers, and genders
 fn generate_lang_file(
     lang_code: &str,
     voices_in_lang: &[&VoiceData],
@@ -288,6 +306,7 @@ fn generate_lang_file(
 
     let mut lang_file = String::new();
 
+    // Group voices by type (Standard, Neural, Generative)
     let type_groups = group_voices_by(voices_in_lang, |v| v.voice_type.clone());
 
     writeln!(lang_file)?;
@@ -303,15 +322,19 @@ fn generate_lang_file(
     writeln!(lang_file, "}};\n")?;
     writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
+    // Generate modules for each voice type (Standard, Neural, Generative)
     for (voice_type, voices_of_type) in &type_groups {
         let type_module = voice_type.to_case(Case::Snake);
         writeln!(lang_file, "pub mod {type_module} {{\n    use super::*;\n")?;
 
+        // Group voices by provider (Amazon, Google, etc.)
         let provider_groups = group_voices_by(voices_of_type, |v| v.provider.clone());
 
+        // Generate modules for each provider
         for (provider, voices_by_provider) in &provider_groups {
             let provider_module = provider.to_case(Case::Snake);
 
+            // Group voices by gender for this provider
             let mut gender_maps: HashMap<&str, HashMap<String, String>> = HashMap::new();
 
             for voice in voices_by_provider {
@@ -337,6 +360,7 @@ fn generate_lang_file(
                 "    pub mod {provider_module} {{\n        use super::*;\n"
             )?;
 
+            // Generate enums for each gender
             for (gender, voice_map) in &gender_maps {
                 if voice_map.is_empty() {
                     continue;
@@ -369,6 +393,7 @@ fn generate_lang_file(
                 )?;
             }
 
+            // Create a Voice enum that contains all gender variants
             writeln!(lang_file, "        {ENUM_DERIVE}")?;
             writeln!(lang_file, "        #[serde(untagged)]")?;
             writeln!(lang_file, "        pub enum Voice {{")?;
@@ -382,6 +407,7 @@ fn generate_lang_file(
             writeln!(lang_file, "    }}\n")?;
         }
 
+        // Create a Voice enum that contains all provider variants
         writeln!(lang_file, "     {ENUM_DERIVE}")?;
         writeln!(lang_file, "    #[serde(untagged)]")?;
         writeln!(lang_file, "    pub enum Voice {{")?;
@@ -404,6 +430,8 @@ fn generate_lang_file(
 
         writeln!(lang_file, "}}\n")?;
     }
+
+    // Create a top-level Voice enum for this language
     writeln!(lang_file, "{ENUM_DERIVE}")?;
     writeln!(lang_file, "#[serde(untagged)]")?;
     writeln!(lang_file, "pub enum Voice {{")?;
@@ -421,6 +449,7 @@ fn generate_lang_file(
     }
     writeln!(lang_file, "}}")?;
 
+    // Implement price calculation for the language's Voice enum
     let mut match_arms = Vec::new();
     for voice_type in type_groups.keys() {
         let voice_type_const = voice_type.to_case(Case::Constant);
@@ -433,19 +462,23 @@ fn generate_lang_file(
 
     write_voice_price_impl(&mut lang_file, "Voice", None, Some(&match_arms))?;
 
+    // Generate gender-based alias modules for easier access
     generate_gender_aliases(&mut lang_file, &type_groups)?;
 
+    // Write the file to disk
     File::create(Path::new(DIR_PATH).join(format!("{module_name}.rs")))?
         .write_all(lang_file.as_bytes())?;
     Ok(())
 }
 
+/// Generates the main mod.rs file with language-specific modules and price constants
 fn generate_main_file(
     pricing: HashMap<String, f32>,
     voices: &HashSet<VoiceData>,
 ) -> Result<HashMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
     let now = chrono::Utc::now().format("%Y-%m-%d %H:%I").to_string();
 
+    // Group voices by language code
     let lang_groups: HashMap<String, Vec<&VoiceData>> =
         voices.iter().fold(HashMap::new(), |mut map, voice| {
             map.entry(voice.language_code.clone())
@@ -461,6 +494,7 @@ fn generate_main_file(
     )?;
     writeln!(main_file, "#![allow(non_local_definitions)]\n")?;
 
+    // Generate price constants for each voice type (Standard, Neural, Generative)
     for (voice_type, price_per_100_chars) in pricing {
         writeln!(
             main_file,
@@ -475,6 +509,7 @@ fn generate_main_file(
 
     writeln!(main_file)?;
 
+    // Generate module imports for each language with feature flags
     let mut lang_codes: Vec<_> = lang_groups.keys().collect();
     lang_codes.sort();
 
@@ -485,6 +520,8 @@ fn generate_main_file(
         writeln!(main_file, "pub mod {module_name};")?;
     }
     writeln!(main_file, "\nuse serde::{{Serialize, Deserialize}};\n")?;
+
+    // Define the VoicePrice trait for pricing calculations
     writeln!(
         main_file,
         r#"
@@ -495,6 +532,7 @@ fn generate_main_file(
     "#
     )?;
 
+    // Create the top-level Voice enum with variants for each language
     writeln!(main_file, "{ENUM_DERIVE}")?;
     writeln!(main_file, "#[serde(untagged)]\n#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
@@ -507,6 +545,7 @@ fn generate_main_file(
     }
     writeln!(main_file, "}}\n")?;
 
+    // Implement the VoicePrice trait for the Voice enum
     let mut match_arms = Vec::new();
     for lang_code in &lang_codes {
         let variant_name = lang_code.to_case(Case::Pascal);
@@ -521,16 +560,19 @@ fn generate_main_file(
 
     write_voice_price_impl(&mut main_file, "Voice", None, Some(&match_arms))?;
 
+    // Write the file to disk
     File::create(Path::new(DIR_PATH).join("mod.rs"))?.write_all(main_file.as_bytes())?;
     Ok(lang_groups)
 }
 
+/// Creates a canonical shortened name from a full voice name (e.g., "Chirp3HdZephyr" from "en-US-Chirp3-HD-Zephyr")
 fn extract_short_name(voice_name: &str) -> String {
     let parts = voice_name.split('-');
     if parts.clone().count() < 3 {
         return voice_name.to_case(Case::Pascal);
     }
 
+    // Skip provider locale name parts, keep only the actual voice name
     parts
         .skip(2)
         .collect::<Vec<&str>>()
@@ -538,6 +580,7 @@ fn extract_short_name(voice_name: &str) -> String {
         .to_case(Case::Pascal)
 }
 
+/// Groups voices by a key function and returns a HashMap of groups
 fn group_voices_by<F, K, V>(voices: &[V], key_fn: F) -> HashMap<K, Vec<V>>
 where
     F: Fn(&V) -> K,
@@ -551,6 +594,8 @@ where
     groups
 }
 
+/// Implements the VoicePrice trait for various voice types
+/// Handles both direct voice type pricing and complex match-based pricing
 fn write_voice_price_impl(
     output: &mut String,
     type_name: &str,
