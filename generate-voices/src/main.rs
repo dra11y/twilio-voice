@@ -19,6 +19,8 @@ fn main() {
 }
 
 const DIR_PATH: &str = "../src/twiml/voices";
+const TWILIO_DOC_URL: &str =
+    "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct VoiceData {
@@ -31,9 +33,10 @@ struct VoiceData {
 
 fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
     let html = fetch_html()?;
-    let all_voices = parse_html_into_voices(html);
+    let (pricing, all_voices) = parse_html_into_voices(html);
     println!("Found {} unique voices", all_voices.len());
-    generate_voice_module_structure(&all_voices)?;
+    println!("Pricing:\n{pricing:#?}");
+    generate_voice_module_structure(pricing, &all_voices)?;
     Command::new("cargo")
         .arg("fmt")
         .current_dir("../")
@@ -41,10 +44,73 @@ fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_html_into_voices(html: String) -> HashSet<VoiceData> {
+fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceData>) {
     let document = Html::parse_document(&html);
     let row_selector = Selector::parse("table tbody tr").unwrap();
     let cell_selector = Selector::parse("td").unwrap();
+
+    // Extract pricing information from the HTML
+    let mut pricing = HashMap::new();
+
+    // Process pricing tables
+    let table_selector = Selector::parse("table").unwrap();
+    let header_selector = Selector::parse("th").unwrap();
+
+    for table in document.select(&table_selector) {
+        // Check if this is a pricing table by examining headers
+        let headers: Vec<_> = table.select(&header_selector).collect();
+        if headers.len() < 3 {
+            continue;
+        }
+        let header_texts: Vec<String> = headers
+            .iter()
+            .map(|h| h.text().collect::<String>().trim().to_string())
+            .collect();
+
+        if !header_texts.contains(&"Price per 100 characters".to_string()) {
+            // This is NOT a pricing table
+            continue;
+        }
+
+        // extract the base pricing tier
+        for row in table.select(&row_selector) {
+            let cells: Vec<_> = row.select(&cell_selector).collect();
+            if cells.len() < 3 {
+                continue;
+            }
+
+            let min_chars = cells[0].text().collect::<String>().trim().to_string();
+
+            if min_chars == "0" {
+                let price_text = cells[2].text().collect::<String>().trim().to_string();
+                let price = price_text
+                    .strip_prefix('$')
+                    .expect("no text in expected price column")
+                    .parse::<f32>()
+                    .expect("failed to parse expected price");
+
+                let mut parent = table.parent();
+                while let Some(node) = parent {
+                    if let Some(element) = node.value().as_element() {
+                        if element.name() == "section" {
+                            let section_id = element.id();
+                            if let Some(id) = section_id {
+                                if id.contains("standard-voices") {
+                                    pricing.insert("Standard".to_string(), price);
+                                } else if id.contains("neural-voices") {
+                                    pricing.insert("Neural".to_string(), price);
+                                } else if id.contains("generative-voices") {
+                                    pricing.insert("Generative".to_string(), price);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                    parent = node.parent();
+                }
+            }
+        }
+    }
 
     let mut all_voices = HashSet::new();
     for row in document.select(&row_selector) {
@@ -91,7 +157,7 @@ fn parse_html_into_voices(html: String) -> HashSet<VoiceData> {
         });
     }
 
-    all_voices
+    (pricing, all_voices)
 }
 
 fn fetch_html() -> Result<String, Box<dyn Error>> {
@@ -105,7 +171,6 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
         html_content
     } else {
         println!("Cache not found, fetching from web...");
-        let url = "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
         let options = LaunchOptions {
             headless: true,
             ..Default::default()
@@ -113,7 +178,7 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
         let browser = Browser::new(options)?;
         let tab = browser.new_tab()?;
 
-        tab.navigate_to(url)?;
+        tab.navigate_to(TWILIO_DOC_URL)?;
         println!("Waiting for page to load and JavaScript to execute...");
         tab.wait_for_element("table tbody tr")?;
         std::thread::sleep(std::time::Duration::from_secs(5));
@@ -128,10 +193,13 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
     Ok(html)
 }
 
-fn generate_voice_module_structure(voices: &HashSet<VoiceData>) -> Result<(), Box<dyn Error>> {
+fn generate_voice_module_structure(
+    pricing: HashMap<String, f32>,
+    voices: &HashSet<VoiceData>,
+) -> Result<(), Box<dyn Error>> {
     std::fs::create_dir_all(DIR_PATH)?;
 
-    let lang_groups = generate_main_file(voices)?;
+    let lang_groups = generate_main_file(pricing, voices)?;
 
     for (lang_code, voices_in_lang) in &lang_groups {
         generate_lang_file(lang_code, voices_in_lang)?;
@@ -224,17 +292,27 @@ fn generate_lang_file(
     let lang_variant = lang_code.to_case(Case::Pascal);
 
     let mut lang_file = String::new();
-    writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
-    writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
     let mut type_groups: HashMap<String, Vec<&VoiceData>> = HashMap::new();
-
     for voice in voices_in_lang {
         type_groups
             .entry(voice.voice_type.clone())
             .or_default()
             .push(voice);
     }
+
+    writeln!(lang_file)?;
+    writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
+    writeln!(lang_file, "use crate::{{VoicePrice,")?;
+    for voice_type in type_groups.keys() {
+        writeln!(
+            lang_file,
+            "{}_VOICE_PRICE,",
+            voice_type.to_case(Case::Constant)
+        )?;
+    }
+    writeln!(lang_file, "}};\n")?;
+    writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
     for (voice_type, voices_of_type) in &type_groups {
         let type_module = voice_type.to_case(Case::Snake);
@@ -299,6 +377,18 @@ fn generate_lang_file(
                 writeln!(
                     lang_file,
                     r#"
+                        impl VoicePrice for {gender} {{
+                            fn price(&self) -> f32 {{
+                                {}_VOICE_PRICE
+                            }}
+                        }}
+                    "#,
+                    voice_type.to_case(Case::Constant)
+                )?;
+
+                writeln!(
+                    lang_file,
+                    r#"
                         impl From<{gender}> for crate::Voice {{
                             fn from(value: {gender}) -> Self {{
                                 Self::{lang_variant}(super::super::Voice::{voice_type}(super::Voice::{provider}(
@@ -316,11 +406,24 @@ fn generate_lang_file(
             )?;
             writeln!(lang_file, "        #[serde(untagged)]")?;
             writeln!(lang_file, "        pub enum Voice {{")?;
-
             for gender in gender_maps.keys() {
                 writeln!(lang_file, "            {gender}({gender}),")?;
             }
-            writeln!(lang_file, "        }}\n    }}\n")?;
+            writeln!(lang_file, "        }}\n")?;
+
+            writeln!(
+                lang_file,
+                r#"
+                    impl VoicePrice for Voice {{
+                        fn price(&self) -> f32 {{
+                            {}_VOICE_PRICE
+                        }}
+                    }}
+                "#,
+                voice_type.to_case(Case::Constant)
+            )?;
+
+            writeln!(lang_file, "    }}\n")?;
         }
 
         writeln!(
@@ -341,7 +444,21 @@ fn generate_lang_file(
                 "        {variant_name}({provider_module}::Voice),"
             )?;
         }
-        writeln!(lang_file, "    }}\n}}\n")?;
+        writeln!(lang_file, "    }}\n")?;
+
+        writeln!(
+            lang_file,
+            r#"
+                impl VoicePrice for Voice {{
+                    fn price(&self) -> f32 {{
+                        {}_VOICE_PRICE
+                    }}
+                }}
+            "#,
+            voice_type.to_case(Case::Constant)
+        )?;
+
+        writeln!(lang_file, "}}\n")?;
     }
     writeln!(
         lang_file,
@@ -363,6 +480,30 @@ fn generate_lang_file(
     }
     writeln!(lang_file, "}}")?;
 
+    writeln!(
+        lang_file,
+        r#"
+            impl VoicePrice for Voice {{
+                fn price(&self) -> f32 {{
+                    match self {{
+        "#
+    )?;
+    for voice_type in type_groups.keys() {
+        let voice_type_const = voice_type.to_case(Case::Constant);
+        writeln!(
+            lang_file,
+            "            Voice::{voice_type}(_) => {voice_type_const}_VOICE_PRICE,"
+        )?;
+    }
+    writeln!(
+        lang_file,
+        r#"
+                    }}
+                }}
+            }}
+        "#
+    )?;
+
     generate_gender_aliases(&mut lang_file, &type_groups)?;
 
     File::create(Path::new(DIR_PATH).join(format!("{module_name}.rs")))?
@@ -371,8 +512,11 @@ fn generate_lang_file(
 }
 
 fn generate_main_file(
+    pricing: HashMap<String, f32>,
     voices: &HashSet<VoiceData>,
 ) -> Result<HashMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
+    let now = chrono::Utc::now().format("%Y-%m-%d %H:%I").to_string();
+
     let mut lang_groups: HashMap<String, Vec<&VoiceData>> = HashMap::new();
     for voice in voices {
         lang_groups
@@ -383,11 +527,27 @@ fn generate_main_file(
     let mut main_file = String::new();
     writeln!(
         main_file,
-        "// Auto-generated voice module\n// Source: Twilio documentation"
+        "// Auto-generated at: {now}\n// Source: {TWILIO_DOC_URL}"
     )?;
     writeln!(main_file, "#![allow(non_local_definitions)]\n")?;
+
+    for (voice_type, price_per_100_chars) in pricing {
+        writeln!(
+            main_file,
+            "/// Current price of {voice_type} voices per 100 chars as of {now} UTC"
+        )?;
+        writeln!(
+            main_file,
+            "pub const {}_VOICE_PRICE: f32 = {price_per_100_chars};",
+            voice_type.to_case(Case::Constant)
+        )?;
+    }
+
+    writeln!(main_file)?;
+
     let mut lang_codes: Vec<_> = lang_groups.keys().collect();
     lang_codes.sort();
+
     for lang_code in &lang_codes {
         let module_name = lang_code.to_case(Case::Snake);
         let feature_name = lang_code.to_case(Case::Kebab);
@@ -395,6 +555,16 @@ fn generate_main_file(
         writeln!(main_file, "pub mod {module_name};")?;
     }
     writeln!(main_file, "\nuse serde::{{Serialize, Deserialize}};\n")?;
+    writeln!(
+        main_file,
+        r#"
+        pub trait VoicePrice {{
+            /// Cost of the voice per 100 characters (rounded down per call)
+            fn price(&self) -> f32;
+        }}
+    "#
+    )?;
+
     writeln!(
         main_file,
         "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
@@ -408,7 +578,35 @@ fn generate_main_file(
         writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
         writeln!(main_file, "    {variant_name}({module_name}::Voice),")?;
     }
-    writeln!(main_file, "}}")?;
+    writeln!(main_file, "}}\n")?;
+
+    writeln!(
+        main_file,
+        r#"
+            impl VoicePrice for Voice {{
+                fn price(&self) -> f32 {{
+                    match self {{
+        "#
+    )?;
+    for lang_code in &lang_codes {
+        let variant_name = lang_code.to_case(Case::Pascal);
+        let lang_code_snake = lang_code.to_case(Case::Snake);
+        let feature_name = lang_code.to_case(Case::Kebab);
+        writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
+        writeln!(
+            main_file,
+            "            Voice::{variant_name}({lang_code_snake}) => {lang_code_snake}.price(),"
+        )?;
+    }
+    writeln!(
+        main_file,
+        r#"
+                    }}
+                }}
+            }}
+        "#
+    )?;
+
     File::create(Path::new(DIR_PATH).join("mod.rs"))?.write_all(main_file.as_bytes())?;
     Ok(lang_groups)
 }
