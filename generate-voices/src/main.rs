@@ -21,6 +21,7 @@ fn main() {
 const DIR_PATH: &str = "../src/twiml/voices";
 const TWILIO_DOC_URL: &str =
     "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
+const ENUM_DERIVE: &str = "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct VoiceData {
@@ -68,7 +69,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
             .collect();
 
         if !header_texts.contains(&"Price per 100 characters".to_string()) {
-            // This is NOT a pricing table
+            // not a pricing table
             continue;
         }
 
@@ -241,13 +242,7 @@ fn generate_gender_aliases(
             writeln!(lang_file, "    pub mod {voice_type_module} {{",)?;
 
             // Group by provider
-            let mut provider_map: HashMap<String, Vec<&&VoiceData>> = HashMap::new();
-            for voice in &voices_with_gender {
-                provider_map
-                    .entry(voice.provider.clone())
-                    .or_default()
-                    .push(voice);
-            }
+            let provider_map = group_voices_by(&voices_with_gender, |v| v.provider.clone());
 
             // For each provider
             for (provider, provider_voices) in provider_map {
@@ -293,13 +288,7 @@ fn generate_lang_file(
 
     let mut lang_file = String::new();
 
-    let mut type_groups: HashMap<String, Vec<&VoiceData>> = HashMap::new();
-    for voice in voices_in_lang {
-        type_groups
-            .entry(voice.voice_type.clone())
-            .or_default()
-            .push(voice);
-    }
+    let type_groups = group_voices_by(voices_in_lang, |v| v.voice_type.clone());
 
     writeln!(lang_file)?;
     writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
@@ -318,13 +307,7 @@ fn generate_lang_file(
         let type_module = voice_type.to_case(Case::Snake);
         writeln!(lang_file, "pub mod {type_module} {{\n    use super::*;\n")?;
 
-        let mut provider_groups: HashMap<String, Vec<&&VoiceData>> = HashMap::new();
-        for voice in voices_of_type {
-            provider_groups
-                .entry(voice.provider.clone())
-                .or_default()
-                .push(voice);
-        }
+        let provider_groups = group_voices_by(voices_of_type, |v| v.provider.clone());
 
         for (provider, voices_by_provider) in &provider_groups {
             let provider_module = provider.to_case(Case::Snake);
@@ -358,11 +341,7 @@ fn generate_lang_file(
                 if voice_map.is_empty() {
                     continue;
                 }
-
-                writeln!(
-                    lang_file,
-                    "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-                )?;
+                writeln!(lang_file, "        {ENUM_DERIVE}")?;
                 writeln!(lang_file, "        #[non_exhaustive]")?;
                 writeln!(lang_file, "        pub enum {gender} {{")?;
                 let mut keys: Vec<_> = voice_map.keys().collect();
@@ -374,17 +353,7 @@ fn generate_lang_file(
                 }
                 writeln!(lang_file, "        }}\n")?;
 
-                writeln!(
-                    lang_file,
-                    r#"
-                        impl VoicePrice for {gender} {{
-                            fn price(&self) -> f32 {{
-                                {}_VOICE_PRICE
-                            }}
-                        }}
-                    "#,
-                    voice_type.to_case(Case::Constant)
-                )?;
+                write_voice_price_impl(&mut lang_file, gender, Some(voice_type), None)?;
 
                 writeln!(
                     lang_file,
@@ -400,10 +369,7 @@ fn generate_lang_file(
                 )?;
             }
 
-            writeln!(
-                lang_file,
-                "        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-            )?;
+            writeln!(lang_file, "        {ENUM_DERIVE}")?;
             writeln!(lang_file, "        #[serde(untagged)]")?;
             writeln!(lang_file, "        pub enum Voice {{")?;
             for gender in gender_maps.keys() {
@@ -411,29 +377,17 @@ fn generate_lang_file(
             }
             writeln!(lang_file, "        }}\n")?;
 
-            writeln!(
-                lang_file,
-                r#"
-                    impl VoicePrice for Voice {{
-                        fn price(&self) -> f32 {{
-                            {}_VOICE_PRICE
-                        }}
-                    }}
-                "#,
-                voice_type.to_case(Case::Constant)
-            )?;
+            write_voice_price_impl(&mut lang_file, "Voice", Some(voice_type), None)?;
 
             writeln!(lang_file, "    }}\n")?;
         }
 
-        writeln!(
-            lang_file,
-            "    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-        )?;
+        writeln!(lang_file, "     {ENUM_DERIVE}")?;
         writeln!(lang_file, "    #[serde(untagged)]")?;
         writeln!(lang_file, "    pub enum Voice {{")?;
+
         for (provider, voices_by_provider) in &provider_groups {
-            if provider.is_empty() || voices_by_provider.is_empty() {
+            if voices_by_provider.is_empty() {
                 continue;
             }
 
@@ -446,24 +400,11 @@ fn generate_lang_file(
         }
         writeln!(lang_file, "    }}\n")?;
 
-        writeln!(
-            lang_file,
-            r#"
-                impl VoicePrice for Voice {{
-                    fn price(&self) -> f32 {{
-                        {}_VOICE_PRICE
-                    }}
-                }}
-            "#,
-            voice_type.to_case(Case::Constant)
-        )?;
+        write_voice_price_impl(&mut lang_file, "Voice", Some(voice_type), None)?;
 
         writeln!(lang_file, "}}\n")?;
     }
-    writeln!(
-        lang_file,
-        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-    )?;
+    writeln!(lang_file, "{ENUM_DERIVE}")?;
     writeln!(lang_file, "#[serde(untagged)]")?;
     writeln!(lang_file, "pub enum Voice {{")?;
     for (voice_type, groups) in &type_groups {
@@ -480,29 +421,17 @@ fn generate_lang_file(
     }
     writeln!(lang_file, "}}")?;
 
-    writeln!(
-        lang_file,
-        r#"
-            impl VoicePrice for Voice {{
-                fn price(&self) -> f32 {{
-                    match self {{
-        "#
-    )?;
+    let mut match_arms = Vec::new();
     for voice_type in type_groups.keys() {
         let voice_type_const = voice_type.to_case(Case::Constant);
-        writeln!(
-            lang_file,
-            "            Voice::{voice_type}(_) => {voice_type_const}_VOICE_PRICE,"
-        )?;
+        match_arms.push((
+            None,
+            format!("Voice::{voice_type}(_)"),
+            format!("{voice_type_const}_VOICE_PRICE"),
+        ));
     }
-    writeln!(
-        lang_file,
-        r#"
-                    }}
-                }}
-            }}
-        "#
-    )?;
+
+    write_voice_price_impl(&mut lang_file, "Voice", None, Some(&match_arms))?;
 
     generate_gender_aliases(&mut lang_file, &type_groups)?;
 
@@ -517,13 +446,14 @@ fn generate_main_file(
 ) -> Result<HashMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
     let now = chrono::Utc::now().format("%Y-%m-%d %H:%I").to_string();
 
-    let mut lang_groups: HashMap<String, Vec<&VoiceData>> = HashMap::new();
-    for voice in voices {
-        lang_groups
-            .entry(voice.language_code.clone())
-            .or_default()
-            .push(voice);
-    }
+    let lang_groups: HashMap<String, Vec<&VoiceData>> =
+        voices.iter().fold(HashMap::new(), |mut map, voice| {
+            map.entry(voice.language_code.clone())
+                .or_default()
+                .push(voice);
+            map
+        });
+
     let mut main_file = String::new();
     writeln!(
         main_file,
@@ -565,10 +495,7 @@ fn generate_main_file(
     "#
     )?;
 
-    writeln!(
-        main_file,
-        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]"
-    )?;
+    writeln!(main_file, "{ENUM_DERIVE}")?;
     writeln!(main_file, "#[serde(untagged)]\n#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
     for lang_code in &lang_codes {
@@ -580,32 +507,19 @@ fn generate_main_file(
     }
     writeln!(main_file, "}}\n")?;
 
-    writeln!(
-        main_file,
-        r#"
-            impl VoicePrice for Voice {{
-                fn price(&self) -> f32 {{
-                    match self {{
-        "#
-    )?;
+    let mut match_arms = Vec::new();
     for lang_code in &lang_codes {
         let variant_name = lang_code.to_case(Case::Pascal);
         let lang_code_snake = lang_code.to_case(Case::Snake);
         let feature_name = lang_code.to_case(Case::Kebab);
-        writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
-        writeln!(
-            main_file,
-            "            Voice::{variant_name}({lang_code_snake}) => {lang_code_snake}.price(),"
-        )?;
+        match_arms.push((
+            Some(feature_name),
+            format!("Voice::{variant_name}({lang_code_snake})"),
+            format!("{lang_code_snake}.price()"),
+        ));
     }
-    writeln!(
-        main_file,
-        r#"
-                    }}
-                }}
-            }}
-        "#
-    )?;
+
+    write_voice_price_impl(&mut main_file, "Voice", None, Some(&match_arms))?;
 
     File::create(Path::new(DIR_PATH).join("mod.rs"))?.write_all(main_file.as_bytes())?;
     Ok(lang_groups)
@@ -622,4 +536,52 @@ fn extract_short_name(voice_name: &str) -> String {
         .collect::<Vec<&str>>()
         .join("")
         .to_case(Case::Pascal)
+}
+
+fn group_voices_by<F, K, V>(voices: &[V], key_fn: F) -> HashMap<K, Vec<V>>
+where
+    F: Fn(&V) -> K,
+    K: Eq + std::hash::Hash + Clone,
+    V: Clone,
+{
+    let mut groups: HashMap<K, Vec<V>> = HashMap::new();
+    for voice in voices {
+        groups.entry(key_fn(voice)).or_default().push(voice.clone());
+    }
+    groups
+}
+
+fn write_voice_price_impl(
+    output: &mut String,
+    type_name: &str,
+    voice_type: Option<&str>,
+    match_arms: Option<&[(Option<String>, String, String)]>,
+) -> Result<(), Box<dyn Error>> {
+    writeln!(output, "    impl VoicePrice for {type_name} {{")?;
+    writeln!(output, "        fn price(&self) -> f32 {{")?;
+
+    if let Some(arms) = match_arms {
+        writeln!(output, "            match self {{")?;
+        for (feature_name, pattern, result) in arms {
+            if let Some(feature_name) = feature_name {
+                writeln!(
+                    output,
+                    r#"                #[cfg(feature = "{feature_name}")]"#
+                )?;
+            }
+            writeln!(output, "                {pattern} => {result},")?;
+        }
+        writeln!(output, "            }}")?;
+    } else {
+        writeln!(
+            output,
+            "            {}_VOICE_PRICE",
+            voice_type.unwrap().to_case(Case::Constant)
+        )?;
+    }
+
+    writeln!(output, "        }}")?;
+    writeln!(output, "    }}\n")?;
+
+    Ok(())
 }
