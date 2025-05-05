@@ -1,6 +1,9 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE, VoicePrice};
+use crate::twiml::{
+    VoicePrice,
+    voices::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -9,29 +12,6 @@ pub mod standard {
 
     pub mod google {
         use super::*;
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Male {
-            #[serde(rename = "Google.pt-BR-Standard-B")]
-            StandardB,
-            #[serde(rename = "Google.pt-BR-Standard-E")]
-            StandardE,
-        }
-
-        impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
-            }
-        }
-
-        impl From<Male> for crate::Voice {
-            fn from(value: Male) -> Self {
-                Self::PtBr(super::super::Voice::Standard(super::Voice::Google(
-                    Voice::Male(value),
-                )))
-            }
-        }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -48,7 +28,7 @@ pub mod standard {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::PtBr(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Female(value),
@@ -57,10 +37,33 @@ pub mod standard {
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Google.pt-BR-Standard-B")]
+            StandardB,
+            #[serde(rename = "Google.pt-BR-Standard-E")]
+            StandardE,
+        }
+
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
+
+        impl From<Male> for crate::twiml::Voice {
+            fn from(value: Male) -> Self {
+                Self::PtBr(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Male(Male),
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {
@@ -90,7 +93,7 @@ pub mod standard {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::PtBr(super::super::Voice::Standard(super::Voice::Polly(
                     Voice::Female(value),
@@ -111,7 +114,7 @@ pub mod standard {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::PtBr(super::super::Voice::Standard(super::Voice::Polly(
                     Voice::Male(value),
@@ -150,39 +153,18 @@ pub mod standard {
 pub mod neural {
     use super::*;
 
-    pub mod polly {
+    pub mod google {
         use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Polly.Camila-Neural")]
-            CamilaNeural,
-            #[serde(rename = "Polly.Vitoria-Neural")]
-            VitoriaNeural,
-            #[serde(rename = "Polly.Vitória-Neural")]
-            VitóriaNeural,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
-            }
-        }
-
-        impl From<Female> for crate::Voice {
-            fn from(value: Female) -> Self {
-                Self::PtBr(super::super::Voice::Neural(super::Voice::Polly(
-                    Voice::Female(value),
-                )))
-            }
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
         pub enum Male {
-            #[serde(rename = "Polly.Thiago-Neural")]
-            ThiagoNeural,
+            #[serde(rename = "Google.pt-BR-Neural2-B")]
+            Neural2B,
+            #[serde(rename = "Google.pt-BR-Wavenet-B")]
+            WavenetB,
+            #[serde(rename = "Google.pt-BR-Wavenet-E")]
+            WavenetE,
         }
 
         impl VoicePrice for Male {
@@ -191,30 +173,13 @@ pub mod neural {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
-                Self::PtBr(super::super::Voice::Neural(super::Voice::Polly(
+                Self::PtBr(super::super::Voice::Neural(super::Voice::Google(
                     Voice::Male(value),
                 )))
             }
         }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-            Male(Male),
-        }
-
-        impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
-            }
-        }
-    }
-
-    pub mod google {
-        use super::*;
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -235,7 +200,7 @@ pub mod neural {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::PtBr(super::super::Voice::Neural(super::Voice::Google(
                     Voice::Female(value),
@@ -244,14 +209,52 @@ pub mod neural {
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Male(Male),
+            Female(Female),
+        }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> f32 {
+                NEURAL_VOICE_PRICE
+            }
+        }
+    }
+
+    pub mod polly {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Polly.Camila-Neural")]
+            CamilaNeural,
+            #[serde(rename = "Polly.Vitoria-Neural")]
+            VitoriaNeural,
+            #[serde(rename = "Polly.Vitória-Neural")]
+            VitóriaNeural,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> f32 {
+                NEURAL_VOICE_PRICE
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::PtBr(super::super::Voice::Neural(super::Voice::Polly(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
-            #[serde(rename = "Google.pt-BR-Neural2-B")]
-            Neural2B,
-            #[serde(rename = "Google.pt-BR-Wavenet-B")]
-            WavenetB,
-            #[serde(rename = "Google.pt-BR-Wavenet-E")]
-            WavenetE,
+            #[serde(rename = "Polly.Thiago-Neural")]
+            ThiagoNeural,
         }
 
         impl VoicePrice for Male {
@@ -260,9 +263,9 @@ pub mod neural {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
-                Self::PtBr(super::super::Voice::Neural(super::Voice::Google(
+                Self::PtBr(super::super::Voice::Neural(super::Voice::Polly(
                     Voice::Male(value),
                 )))
             }
@@ -285,8 +288,8 @@ pub mod neural {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Polly(polly::Voice),
         Google(google::Voice),
+        Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
@@ -301,33 +304,6 @@ pub mod generative {
 
     pub mod google {
         use super::*;
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Male {
-            #[serde(rename = "Google.pt-BR-Chirp3-HD-Charon")]
-            Chirp3HdCharon,
-            #[serde(rename = "Google.pt-BR-Chirp3-HD-Fenrir")]
-            Chirp3HdFenrir,
-            #[serde(rename = "Google.pt-BR-Chirp3-HD-Orus")]
-            Chirp3HdOrus,
-            #[serde(rename = "Google.pt-BR-Chirp3-HD-Puck")]
-            Chirp3HdPuck,
-        }
-
-        impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
-            }
-        }
-
-        impl From<Male> for crate::Voice {
-            fn from(value: Male) -> Self {
-                Self::PtBr(super::super::Voice::Generative(super::Voice::Google(
-                    Voice::Male(value),
-                )))
-            }
-        }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -348,7 +324,7 @@ pub mod generative {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::PtBr(super::super::Voice::Generative(super::Voice::Google(
                     Voice::Female(value),
@@ -357,10 +333,37 @@ pub mod generative {
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Google.pt-BR-Chirp3-HD-Charon")]
+            Chirp3HdCharon,
+            #[serde(rename = "Google.pt-BR-Chirp3-HD-Fenrir")]
+            Chirp3HdFenrir,
+            #[serde(rename = "Google.pt-BR-Chirp3-HD-Orus")]
+            Chirp3HdOrus,
+            #[serde(rename = "Google.pt-BR-Chirp3-HD-Puck")]
+            Chirp3HdPuck,
+        }
+
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                GENERATIVE_VOICE_PRICE
+            }
+        }
+
+        impl From<Male> for crate::twiml::Voice {
+            fn from(value: Male) -> Self {
+                Self::PtBr(super::super::Voice::Generative(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Male(Male),
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {
@@ -453,15 +456,15 @@ pub mod male {
         }
     }
     pub mod neural {
+        pub mod polly {
+            use super::super::super::neural::polly::*;
+            pub const ThiagoNeural: Male = Male::ThiagoNeural;
+        }
         pub mod google {
             use super::super::super::neural::google::*;
             pub const Neural2B: Male = Male::Neural2B;
             pub const WavenetB: Male = Male::WavenetB;
             pub const WavenetE: Male = Male::WavenetE;
-        }
-        pub mod polly {
-            use super::super::super::neural::polly::*;
-            pub const ThiagoNeural: Male = Male::ThiagoNeural;
         }
     }
     pub mod generative {

@@ -1,6 +1,9 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE, VoicePrice};
+use crate::twiml::{
+    VoicePrice,
+    voices::{NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +28,7 @@ pub mod neural {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::FilPh(super::super::Voice::Neural(super::Voice::Google(
                     Voice::Female(value),
@@ -48,7 +51,7 @@ pub mod neural {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::FilPh(super::super::Voice::Neural(super::Voice::Google(
                     Voice::Male(value),
@@ -104,7 +107,7 @@ pub mod standard {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::FilPh(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Female(value),
@@ -127,7 +130,7 @@ pub mod standard {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::FilPh(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Male(value),

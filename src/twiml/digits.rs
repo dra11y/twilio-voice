@@ -1,6 +1,8 @@
-use std::{fmt, str::FromStr};
+use std::{fmt, ops::Index, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+
+use crate::{Result, errors::DigitsError};
 
 #[derive(Clone, Default, PartialEq, Eq, Hash)]
 pub struct Digits(Vec<Digit>);
@@ -27,31 +29,55 @@ impl Digits {
     }
 
     /// Return the integer value of the leading numeric digits if all non-numeric digits appear after all numeric digits; otherwise return None.
-    pub fn to_int(&self) -> Option<u64> {
-        if self.0.is_empty() {
-            return None;
+    pub fn to_int(&self) -> Result<u64> {
+        if self.is_empty() {
+            return Err(DigitsError::Empty.into());
         }
 
-        self.0[0].to_int()?;
+        // First digit must be numeric or a pause.
+        if !(self.0[0].to_int().is_some() || self.0[0].is_pause()) {
+            return Err(DigitsError::FirstDigitNotNumeric.into());
+        }
 
-        // Convert only the numeric part to integer
+        // Convert only the numeric part to integer.
         let mut result = 0u64;
+        let mut found_digit = false;
         let mut found_non_digit = false;
         for digit in &self.0 {
+            // Always treat sequence containing any alphabetic as non-numeric.
+            if digit.is_alpha() {
+                return Err(DigitsError::ContainsAlphabetic.into());
+            }
+
+            // Ignore pauses.
+            if digit.is_pause() {
+                continue;
+            }
+
             let Some(int) = digit.to_int() else {
                 found_non_digit = true;
                 continue;
             };
+
+            // Found a digit after a non-digit.
             if found_non_digit {
-                return None;
+                return Err(DigitsError::NumericAfterNonNumeric.into());
             }
-            // Check for potential overflow
+
+            // Check for potential overflow.
             if result > u64::MAX / 10 {
-                return None;
+                return Err(DigitsError::Overflow.into());
             }
+
+            found_digit = true;
             result = result * 10 + int;
         }
-        Some(result)
+
+        if !found_digit {
+            return Err(DigitsError::NoNumeric.into());
+        }
+
+        Ok(result)
     }
 }
 
@@ -96,9 +122,29 @@ pub enum Digit {
     #[strum(serialize = "#")]
     #[serde(rename = "#")]
     Pound,
+    A,
+    B,
+    C,
+    D,
+    /// 0.5-second pause (lowercase 'w' in API)
+    #[strum(serialize = "w")]
+    #[serde(rename = "w")]
+    W,
+    /// 1-second pause (UPPERCASE 'W' in API)
+    #[strum(serialize = "W")]
+    #[serde(rename = "W")]
+    WW,
 }
 
 impl Digit {
+    pub fn is_alpha(&self) -> bool {
+        matches!(self, Digit::A | Digit::B | Digit::C | Digit::D)
+    }
+
+    pub fn is_pause(&self) -> bool {
+        matches!(self, Digit::W | Digit::WW)
+    }
+
     pub fn to_int(&self) -> Option<u64> {
         match self {
             Digit::Zero => Some(0),
@@ -119,7 +165,7 @@ impl Digit {
 impl TryFrom<char> for Digit {
     type Error = ();
 
-    fn try_from(c: char) -> Result<Self, Self::Error> {
+    fn try_from(c: char) -> std::result::Result<Self, Self::Error> {
         match c {
             '0' => Ok(Digit::Zero),
             '1' => Ok(Digit::One),
@@ -133,8 +179,22 @@ impl TryFrom<char> for Digit {
             '9' => Ok(Digit::Nine),
             '*' => Ok(Digit::Star),
             '#' => Ok(Digit::Pound),
+            'A' => Ok(Digit::A),
+            'B' => Ok(Digit::B),
+            'C' => Ok(Digit::C),
+            'D' => Ok(Digit::D),
+            'w' => Ok(Digit::W),
+            'W' => Ok(Digit::WW),
             _ => Err(()),
         }
+    }
+}
+
+impl Index<usize> for Digits {
+    type Output = Digit;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
     }
 }
 
@@ -169,7 +229,7 @@ impl fmt::Display for Digits {
 impl FromStr for Digits {
     type Err = ();
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let mut digits = Vec::with_capacity(s.len());
         for c in s.chars() {
             digits.push(Digit::try_from(c)?);
@@ -197,7 +257,7 @@ impl From<Digits> for Vec<Digit> {
 }
 
 impl Serialize for Digits {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -206,7 +266,7 @@ impl Serialize for Digits {
 }
 
 impl<'de> Deserialize<'de> for Digits {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
@@ -221,30 +281,40 @@ impl<'de> Deserialize<'de> for Digits {
 
 #[cfg(test)]
 mod tests {
-    use crate::Digit;
+    use crate::twiml::Digit;
 
     use super::*;
 
     #[test]
-    fn test_deserialize_request() {
+    fn test_digits_from_str() {
+        let digits = Digits::from_str("123wABWCD").unwrap();
+        assert_eq!(digits.to_string(), "123wABWCD");
+        assert!(digits.to_int().is_err());
+        assert_eq!(digits[3], Digit::W);
+        assert_eq!(digits[5], Digit::B);
+        assert_eq!(digits[6], Digit::WW);
+    }
+
+    #[test]
+    fn test_digits() {
         let digits = Digits::from_str("*31#").unwrap();
         assert_eq!(digits.to_string(), "*31#");
-        assert!(digits.to_int().is_none());
+        assert!(digits.to_int().is_err());
         assert_eq!(digits.iter().next().unwrap(), &Digit::Star);
 
         let digits = Digits::from_str("31").unwrap();
         assert_eq!(digits.to_string(), "31");
-        assert_eq!(digits.to_int(), Some(31));
+        assert_eq!(digits.to_int().unwrap(), 31);
         assert_eq!(digits.iter().next().unwrap(), &Digit::Three);
 
         let digits = Digits::from_str("31#*").unwrap();
         assert_eq!(digits.to_string(), "31#*");
-        assert_eq!(digits.to_int(), Some(31));
+        assert_eq!(digits.to_int().unwrap(), 31);
         assert_eq!(digits.iter().next().unwrap(), &Digit::Three);
 
         let digits = Digits::from_str("31*31").unwrap();
         assert_eq!(digits.to_string(), "31*31");
-        assert!(digits.to_int().is_none());
+        assert!(digits.to_int().is_err());
         assert_eq!(digits.iter().next().unwrap(), &Digit::Three);
     }
 }

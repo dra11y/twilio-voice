@@ -1,13 +1,13 @@
-// Auto-generated at: 2025-05-03 03:03
+// Auto-generated at: 2025-05-04 04:04
 // Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
 
-/// Current price of Standard voices per 100 chars as of 2025-05-03 03:03 UTC
-pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
-/// Current price of Neural voices per 100 chars as of 2025-05-03 03:03 UTC
-pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
-/// Current price of Generative voices per 100 chars as of 2025-05-03 03:03 UTC
+/// Current price of Generative voices per 100 chars as of 2025-05-04 04:04 UTC
 pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
+/// Current price of Standard voices per 100 chars as of 2025-05-04 04:04 UTC
+pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
+/// Current price of Neural voices per 100 chars as of 2025-05-04 04:04 UTC
+pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
 
 #[cfg(feature = "af-za")]
 pub mod af_za;
@@ -147,6 +147,209 @@ use serde::{Deserialize, Serialize};
 pub trait VoicePrice {
     /// Cost of the voice per 100 characters (rounded down per call)
     fn price(&self) -> f32;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub enum Language {
+    #[cfg(feature = "af-za")]
+    #[serde(rename = "af-ZA")]
+    AfZa,
+    #[cfg(feature = "ar-ae")]
+    #[serde(rename = "ar-AE")]
+    ArAe,
+    #[cfg(feature = "ar-xa")]
+    #[serde(rename = "ar-XA")]
+    ArXa,
+    #[cfg(feature = "arb")]
+    #[serde(rename = "arb")]
+    Arb,
+    #[cfg(feature = "bg-bg")]
+    #[serde(rename = "bg-BG")]
+    BgBg,
+    #[cfg(feature = "bn-in")]
+    #[serde(rename = "bn-IN")]
+    BnIn,
+    #[cfg(feature = "ca-es")]
+    #[serde(rename = "ca-ES")]
+    CaEs,
+    #[cfg(feature = "cmn-cn")]
+    #[serde(rename = "cmn-CN")]
+    CmnCn,
+    #[cfg(feature = "cmn-tw")]
+    #[serde(rename = "cmn-TW")]
+    CmnTw,
+    #[cfg(feature = "cs-cz")]
+    #[serde(rename = "cs-CZ")]
+    CsCz,
+    #[cfg(feature = "cy-gb")]
+    #[serde(rename = "cy-GB")]
+    CyGb,
+    #[cfg(feature = "da-dk")]
+    #[serde(rename = "da-DK")]
+    DaDk,
+    #[cfg(feature = "de-at")]
+    #[serde(rename = "de-AT")]
+    DeAt,
+    #[cfg(feature = "de-de")]
+    #[serde(rename = "de-DE")]
+    DeDe,
+    #[cfg(feature = "el-gr")]
+    #[serde(rename = "el-GR")]
+    ElGr,
+    #[cfg(feature = "en-au")]
+    #[serde(rename = "en-AU")]
+    EnAu,
+    #[cfg(feature = "en-gb")]
+    #[serde(rename = "en-GB")]
+    EnGb,
+    #[cfg(feature = "en-gb-wls")]
+    #[serde(rename = "en-GB-WLS")]
+    EnGbWls,
+    #[cfg(feature = "en-ie")]
+    #[serde(rename = "en-IE")]
+    EnIe,
+    #[cfg(feature = "en-in")]
+    #[serde(rename = "en-IN")]
+    EnIn,
+    #[cfg(feature = "en-nz")]
+    #[serde(rename = "en-NZ")]
+    EnNz,
+    #[cfg(feature = "en-us")]
+    #[serde(rename = "en-US")]
+    EnUs,
+    #[cfg(feature = "en-za")]
+    #[serde(rename = "en-ZA")]
+    EnZa,
+    #[cfg(feature = "es-es")]
+    #[serde(rename = "es-ES")]
+    EsEs,
+    #[cfg(feature = "es-mx")]
+    #[serde(rename = "es-MX")]
+    EsMx,
+    #[cfg(feature = "es-us")]
+    #[serde(rename = "es-US")]
+    EsUs,
+    #[cfg(feature = "eu-es")]
+    #[serde(rename = "eu-ES")]
+    EuEs,
+    #[cfg(feature = "fi-fi")]
+    #[serde(rename = "fi-FI")]
+    FiFi,
+    #[cfg(feature = "fil-ph")]
+    #[serde(rename = "fil-PH")]
+    FilPh,
+    #[cfg(feature = "fr-be")]
+    #[serde(rename = "fr-BE")]
+    FrBe,
+    #[cfg(feature = "fr-ca")]
+    #[serde(rename = "fr-CA")]
+    FrCa,
+    #[cfg(feature = "fr-fr")]
+    #[serde(rename = "fr-FR")]
+    FrFr,
+    #[cfg(feature = "gl-es")]
+    #[serde(rename = "gl-ES")]
+    GlEs,
+    #[cfg(feature = "gu-in")]
+    #[serde(rename = "gu-IN")]
+    GuIn,
+    #[cfg(feature = "he-il")]
+    #[serde(rename = "he-IL")]
+    HeIl,
+    #[cfg(feature = "hi-in")]
+    #[serde(rename = "hi-IN")]
+    HiIn,
+    #[cfg(feature = "hu-hu")]
+    #[serde(rename = "hu-HU")]
+    HuHu,
+    #[cfg(feature = "id-id")]
+    #[serde(rename = "id-ID")]
+    IdId,
+    #[cfg(feature = "is-is")]
+    #[serde(rename = "is-IS")]
+    IsIs,
+    #[cfg(feature = "it-it")]
+    #[serde(rename = "it-IT")]
+    ItIt,
+    #[cfg(feature = "ja-jp")]
+    #[serde(rename = "ja-JP")]
+    JaJp,
+    #[cfg(feature = "kn-in")]
+    #[serde(rename = "kn-IN")]
+    KnIn,
+    #[cfg(feature = "ko-kr")]
+    #[serde(rename = "ko-KR")]
+    KoKr,
+    #[cfg(feature = "lt-lt")]
+    #[serde(rename = "lt-LT")]
+    LtLt,
+    #[cfg(feature = "lv-lv")]
+    #[serde(rename = "lv-LV")]
+    LvLv,
+    #[cfg(feature = "ml-in")]
+    #[serde(rename = "ml-IN")]
+    MlIn,
+    #[cfg(feature = "mr-in")]
+    #[serde(rename = "mr-IN")]
+    MrIn,
+    #[cfg(feature = "ms-my")]
+    #[serde(rename = "ms-MY")]
+    MsMy,
+    #[cfg(feature = "nb-no")]
+    #[serde(rename = "nb-NO")]
+    NbNo,
+    #[cfg(feature = "nl-be")]
+    #[serde(rename = "nl-BE")]
+    NlBe,
+    #[cfg(feature = "nl-nl")]
+    #[serde(rename = "nl-NL")]
+    NlNl,
+    #[cfg(feature = "pa-in")]
+    #[serde(rename = "pa-IN")]
+    PaIn,
+    #[cfg(feature = "pl-pl")]
+    #[serde(rename = "pl-PL")]
+    PlPl,
+    #[cfg(feature = "pt-br")]
+    #[serde(rename = "pt-BR")]
+    PtBr,
+    #[cfg(feature = "pt-pt")]
+    #[serde(rename = "pt-PT")]
+    PtPt,
+    #[cfg(feature = "ro-ro")]
+    #[serde(rename = "ro-RO")]
+    RoRo,
+    #[cfg(feature = "ru-ru")]
+    #[serde(rename = "ru-RU")]
+    RuRu,
+    #[cfg(feature = "sk-sk")]
+    #[serde(rename = "sk-SK")]
+    SkSk,
+    #[cfg(feature = "sv-se")]
+    #[serde(rename = "sv-SE")]
+    SvSe,
+    #[cfg(feature = "ta-in")]
+    #[serde(rename = "ta-IN")]
+    TaIn,
+    #[cfg(feature = "te-in")]
+    #[serde(rename = "te-IN")]
+    TeIn,
+    #[cfg(feature = "th-th")]
+    #[serde(rename = "th-TH")]
+    ThTh,
+    #[cfg(feature = "tr-tr")]
+    #[serde(rename = "tr-TR")]
+    TrTr,
+    #[cfg(feature = "vi-vn")]
+    #[serde(rename = "vi-VN")]
+    ViVn,
+    #[cfg(feature = "yue-cn")]
+    #[serde(rename = "yue-CN")]
+    YueCn,
+    #[cfg(feature = "yue-hk")]
+    #[serde(rename = "yue-HK")]
+    YueHk,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

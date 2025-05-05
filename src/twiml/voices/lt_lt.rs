@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{STANDARD_VOICE_PRICE, VoicePrice};
+use crate::twiml::{VoicePrice, voices::STANDARD_VOICE_PRICE};
 
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ pub mod standard {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::LtLt(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Male(value),

@@ -311,7 +311,7 @@ fn generate_lang_file(
 
     writeln!(lang_file)?;
     writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
-    writeln!(lang_file, "use crate::{{VoicePrice,")?;
+    writeln!(lang_file, "use crate::twiml::{{VoicePrice, voices::{{")?;
     for voice_type in type_groups.keys() {
         writeln!(
             lang_file,
@@ -319,7 +319,7 @@ fn generate_lang_file(
             voice_type.to_case(Case::Constant)
         )?;
     }
-    writeln!(lang_file, "}};\n")?;
+    writeln!(lang_file, "}},}};\n")?;
     writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
     // Generate modules for each voice type (Standard, Neural, Generative)
@@ -382,7 +382,7 @@ fn generate_lang_file(
                 writeln!(
                     lang_file,
                     r#"
-                        impl From<{gender}> for crate::Voice {{
+                        impl From<{gender}> for crate::twiml::Voice {{
                             fn from(value: {gender}) -> Self {{
                                 Self::{lang_variant}(super::super::Voice::{voice_type}(super::Voice::{provider}(
                                     Voice::{gender}(value),
@@ -531,6 +531,20 @@ fn generate_main_file(
         }}
     "#
     )?;
+
+    // Create the top-level Language enum
+    writeln!(main_file, "{ENUM_DERIVE}")?;
+    writeln!(main_file, "#[non_exhaustive]")?;
+    writeln!(main_file, "pub enum Language {{")?;
+    for lang_code in &lang_codes {
+        let module_name = lang_code.to_case(Case::Snake);
+        let variant_name = module_name.to_case(Case::Pascal);
+        let feature_name = lang_code.to_case(Case::Kebab);
+        writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
+        writeln!(main_file, "    #[serde(rename = \"{lang_code}\")]")?;
+        writeln!(main_file, "    {variant_name},")?;
+    }
+    writeln!(main_file, "}}\n")?;
 
     // Create the top-level Voice enum with variants for each language
     writeln!(main_file, "{ENUM_DERIVE}")?;

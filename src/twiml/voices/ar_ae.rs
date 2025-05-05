@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{NEURAL_VOICE_PRICE, VoicePrice};
+use crate::twiml::{VoicePrice, voices::NEURAL_VOICE_PRICE};
 
 use serde::{Deserialize, Serialize};
 
@@ -9,27 +9,6 @@ pub mod neural {
 
     pub mod polly {
         use super::*;
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Male {
-            #[serde(rename = "Polly.Zayd-Neural")]
-            ZaydNeural,
-        }
-
-        impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
-            }
-        }
-
-        impl From<Male> for crate::Voice {
-            fn from(value: Male) -> Self {
-                Self::ArAe(super::super::Voice::Neural(super::Voice::Polly(
-                    Voice::Male(value),
-                )))
-            }
-        }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -44,7 +23,7 @@ pub mod neural {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::ArAe(super::super::Voice::Neural(super::Voice::Polly(
                     Voice::Female(value),
@@ -53,10 +32,31 @@ pub mod neural {
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Polly.Zayd-Neural")]
+            ZaydNeural,
+        }
+
+        impl VoicePrice for Male {
+            fn price(&self) -> f32 {
+                NEURAL_VOICE_PRICE
+            }
+        }
+
+        impl From<Male> for crate::twiml::Voice {
+            fn from(value: Male) -> Self {
+                Self::ArAe(super::super::Voice::Neural(super::Voice::Polly(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Male(Male),
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {

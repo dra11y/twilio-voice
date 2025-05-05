@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{STANDARD_VOICE_PRICE, VoicePrice};
+use crate::twiml::{VoicePrice, voices::STANDARD_VOICE_PRICE};
 
 use serde::{Deserialize, Serialize};
 
@@ -9,29 +9,6 @@ pub mod standard {
 
     pub mod google {
         use super::*;
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.yue-HK-Standard-A")]
-            StandardA,
-            #[serde(rename = "Google.yue-HK-Standard-C")]
-            StandardC,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
-            }
-        }
-
-        impl From<Female> for crate::Voice {
-            fn from(value: Female) -> Self {
-                Self::YueHk(super::super::Voice::Standard(super::Voice::Google(
-                    Voice::Female(value),
-                )))
-            }
-        }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -48,7 +25,7 @@ pub mod standard {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::YueHk(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Male(value),
@@ -57,10 +34,33 @@ pub mod standard {
         }
 
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.yue-HK-Standard-A")]
+            StandardA,
+            #[serde(rename = "Google.yue-HK-Standard-C")]
+            StandardC,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> f32 {
+                STANDARD_VOICE_PRICE
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::YueHk(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
             Male(Male),
+            Female(Female),
         }
 
         impl VoicePrice for Voice {

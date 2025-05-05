@@ -1,6 +1,9 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, VoicePrice};
+use crate::twiml::{
+    VoicePrice,
+    voices::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +26,7 @@ pub mod neural {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::EnZa(super::super::Voice::Neural(super::Voice::Polly(
                     Voice::Female(value),
@@ -76,7 +79,7 @@ pub mod generative {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::EnZa(super::super::Voice::Generative(super::Voice::Polly(
                     Voice::Female(value),

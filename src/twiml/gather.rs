@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{Digit, Method, Pause, Say, TwilioLanguage, VoicePrice};
+use super::{Digit, Language, Method, Pause, Play, Say, VoicePrice};
 
 /// TwiML Voice: <Gather>
 /// https://www.twilio.com/docs/voice/twiml/gather
@@ -15,7 +15,7 @@ pub struct Gather {
     #[builder(default)]
     pub action_on_empty_result: bool,
     #[serde(rename = "@finishOnKey")]
-    #[builder(default)]
+    #[builder(default, setter(strip_option))]
     pub finish_on_key: Option<Digit>,
     #[serde(rename = "@hints")]
     #[builder(default, setter(strip_option))]
@@ -24,8 +24,8 @@ pub struct Gather {
     #[builder(default)]
     pub input: InputType,
     #[serde(rename = "@language")]
-    #[builder(default)]
-    pub language: TwilioLanguage,
+    #[builder(default = Language::EnUs)]
+    pub language: Language,
     #[serde(rename = "@method")]
     #[builder(default)]
     pub method: Method,
@@ -87,13 +87,15 @@ pub enum Timeout {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GatherVerb {
-    Say(Say),
     Pause(Pause),
+    Play(Play),
+    Say(Say),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SpeechModel {
+    #[default]
     Default,
     NumbersAndCommands,
     PhoneCall,
@@ -107,21 +109,38 @@ pub enum SpeechModel {
     DeepgramNova2,
 }
 
+#[allow(clippy::type_complexity)]
 impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N>
     GatherBuilder<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, ())>
 {
-    #[allow(clippy::type_complexity)]
     pub fn say(
         self,
         say: Say,
     ) -> GatherBuilder<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, (Vec<GatherVerb>,))> {
         self.verbs(vec![GatherVerb::Say(say)])
     }
+
+    pub fn pause(
+        self,
+        pause: Pause,
+    ) -> GatherBuilder<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, (Vec<GatherVerb>,))> {
+        self.verbs(vec![GatherVerb::Pause(pause)])
+    }
 }
 
 impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N>
     GatherBuilder<(A, B, C, D, E, F, G, H, I, J, K, L, M, N, (Vec<GatherVerb>,))>
 {
+    pub fn pause(mut self, pause: Pause) -> Self {
+        self.fields.14.0.push(GatherVerb::Pause(pause));
+        self
+    }
+
+    pub fn play(mut self, play: Play) -> Self {
+        self.fields.14.0.push(GatherVerb::Play(play));
+        self
+    }
+
     pub fn say(mut self, say: Say) -> Self {
         self.fields.14.0.push(GatherVerb::Say(say));
         self

@@ -1,8 +1,6 @@
-use thiserror::Error;
-
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("unknown")]
     Unknown,
@@ -12,4 +10,22 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("Parse URL: {0}")]
     Url(#[from] url::ParseError),
+    #[error("Digits: {0}")]
+    Digits(#[from] DigitsError),
+}
+
+#[derive(Debug, thiserror::Error, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DigitsError {
+    #[error("is empty")]
+    Empty,
+    #[error("first digit is not numeric")]
+    FirstDigitNotNumeric,
+    #[error("does not contain any numeric digits")]
+    NoNumeric,
+    #[error("contains an alphabetic digit")]
+    ContainsAlphabetic,
+    #[error("numeric digits are broken by a non-numeric digit")]
+    NumericAfterNonNumeric,
+    #[error("u64 overflow")]
+    Overflow,
 }

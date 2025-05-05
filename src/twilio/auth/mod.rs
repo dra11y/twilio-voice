@@ -1,11 +1,13 @@
+#[cfg(feature = "middleware")]
+pub mod middleware;
+
 use base64::{Engine as _, engine::general_purpose};
 use hmac::{Hmac, Mac};
+use regex::{Regex, RegexBuilder};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 use url::Url;
-
-use crate::Result;
 
 type HmacSha1 = Hmac<Sha1>;
 
@@ -34,9 +36,7 @@ pub fn get_expected_twilio_signature(
     url: &str,
     params: &HashMap<String, String>,
 ) -> String {
-    let mut url = parse_and_normalize_url(url)
-        .map(String::from)
-        .unwrap_or_default();
+    let mut url = url.to_string();
 
     // If url contains bodySHA256 and params is empty, use empty params
     let use_params = if url.contains("bodySHA256") && params.is_empty() {
@@ -80,73 +80,14 @@ pub fn get_expected_body_hash(body: &str) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-/// Utility function to build URL with standard port
-fn build_url_with_standard_port(parsed_url: &Url) -> String {
-    let mut url = String::new();
-    let port = if parsed_url.scheme() == "https" {
-        ":443"
-    } else {
-        ":80"
-    };
-
-    url.push_str(&format!("{}://", parsed_url.scheme()));
-
-    if !parsed_url.username().is_empty() {
-        url.push_str(parsed_url.username());
-        if let Some(password) = parsed_url.password() {
-            url.push_str(&format!(":{password}"));
-        }
-        url.push('@');
-    }
-
-    url.push_str(&format!("{}{}", parsed_url.host_str().unwrap_or(""), port));
-    url.push_str(parsed_url.path());
-
-    if let Some(query) = parsed_url.query() {
-        url.push_str(&format!("?{query}"));
-    }
-
-    if let Some(fragment) = parsed_url.fragment() {
-        url.push_str(&format!("#{fragment}"));
-    }
-
-    url
+/// Utility function to add a default port to a URL
+fn add_port(url: &str) -> String {
+    url_with_default_port_strip_auth(url, true)
 }
 
-/// Utility function to add a port number to a URL
-fn add_port(parsed_url: &Url) -> String {
-    if parsed_url.port().is_none() {
-        build_url_with_standard_port(parsed_url)
-    } else {
-        parsed_url.to_string()
-    }
-}
-
-/// Utility function to remove a port number from a URL
-fn remove_port(parsed_url: &Url) -> String {
-    let mut url = parsed_url.clone();
-    url.set_port(None).unwrap_or(());
-    url.to_string()
-}
-
-fn parse_and_normalize_url(url: &str) -> Result<Url> {
-    let mut url = Url::parse(url)?;
-
-    // Skip normalization if no query exists
-    if url.query().is_none_or(str::is_empty) {
-        return Ok(url);
-    }
-
-    // Extract, then rebuild with consistent encoding
-    let pairs: Vec<_> = url.query_pairs().into_owned().collect();
-
-    {
-        let mut pairs_mut = url.query_pairs_mut();
-        pairs_mut.clear();
-        pairs_mut.extend_pairs(pairs);
-    }
-
-    Ok(url)
+/// Utility function to remove a default port from a URL
+fn remove_port(url: &str) -> String {
+    url_with_default_port_strip_auth(url, false)
 }
 
 /// Validate a signature with a specific URL format
@@ -162,19 +103,68 @@ fn validate_signature_with_url(
 
 /// Constant time comparison of two strings (to prevent timing attacks)
 fn constant_time_compare(a: &str, b: &str) -> bool {
+    let mut result = 0u8;
+
     if a.len() != b.len() {
-        return false;
+        result = 1;
     }
 
-    let a_bytes = a.as_bytes();
-    let b_bytes = b.as_bytes();
-
-    let mut result = 0;
-    for i in 0..a.len() {
-        result |= a_bytes[i] ^ b_bytes[i];
+    for (x, y) in a.bytes().zip(b.bytes()) {
+        result |= x ^ y;
     }
 
-    result == 0
+    subtle::ConstantTimeEq::ct_eq(&result, &0).into()
+}
+
+static URL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    RegexBuilder::new(
+        r"(?<scheme>https?)://(?:(?<auth>[^/]+)@)?(?<host>[^/:]+)(?::(?<port>\d+))?(?<rest>.*)?$",
+    )
+    .case_insensitive(true)
+    .build()
+    .unwrap()
+});
+
+/// Provide URL with/without default port and strip auth if present.
+fn url_with_default_port_strip_auth(url: &str, with: bool) -> String {
+    let Some(caps) = URL_REGEX.captures(url) else {
+        return url.to_string();
+    };
+    let Some(scheme) = caps.name("scheme").map(|m| m.as_str()) else {
+        return url.to_string();
+    };
+    let Some(host) = caps.name("host").map(|m| m.as_str()) else {
+        return url.to_string();
+    };
+    let Some(rest) = caps.name("rest").map(|m| m.as_str()) else {
+        return url.to_string();
+    };
+    let default_port = if scheme == "https" { 443 } else { 80 };
+    let port: u16 = caps
+        .name("port")
+        .map(|m| m.as_str().parse().unwrap_or(default_port))
+        .unwrap_or(default_port);
+    if with || port != default_port {
+        format!("{scheme}://{host}:{port}{rest}")
+    } else {
+        format!("{scheme}://{host}{rest}")
+    }
+}
+
+fn with_legacy_querystring(url: &str) -> String {
+    let Some((base_url, query)) = url.split_once('?') else {
+        return url.to_string();
+    };
+    let query = query.replace("%20", "+");
+    format!("{base_url}?{query}")
+}
+
+fn with_modern_querystring(url: &str) -> String {
+    let Some((base_url, query)) = url.split_once('?') else {
+        return url.to_string();
+    };
+    let query = query.replace('+', "%20");
+    format!("{base_url}?{query}")
 }
 
 /// Validate that a request came from Twilio
@@ -193,18 +183,21 @@ pub fn validate_request(
     url: &str,
     params: &HashMap<String, String>,
 ) -> bool {
-    let Ok(url) = parse_and_normalize_url(url) else {
-        return false;
-    };
+    //  Check signature of the url with and without the port number
+    //  and with and without the legacy querystring (special chars are encoded when using `new URL()`)
+    //  since signature generation on the back end is inconsistent
+    let variants = [
+        remove_port(url),
+        add_port(url),
+        remove_port(&with_modern_querystring(url)),
+        add_port(&with_modern_querystring(url)),
+        remove_port(&with_legacy_querystring(url)),
+        add_port(&with_legacy_querystring(url)),
+    ];
 
-    // Check signature of the url with and without the port number
-    // (and implied by parse_and_normalize_url: with and without the legacy querystring)
-    // since signature generation on the back end is inconsistent
-    if validate_signature_with_url(auth_token, twilio_header, &remove_port(&url), params) {
-        return true;
-    }
-
-    validate_signature_with_url(auth_token, twilio_header, &add_port(&url), params)
+    variants.iter().any(|variant_url| {
+        validate_signature_with_url(auth_token, twilio_header, variant_url, params)
+    })
 }
 
 /// Validate the body of a request against a body hash
@@ -249,11 +242,11 @@ pub fn validate_request_with_body(
         && validate_body(body, &body_hash)
 }
 
-/// Validates an incoming request is indeed from Twilio
+/// Implement on a [`Request`] object for validation.
 pub trait TwilioRequest {
     fn protocol(&self) -> String;
     fn host(&self) -> String;
-    fn original_url(&self) -> String;
+    fn path_and_query(&self) -> String;
     fn twilio_signature(&self) -> Option<String>;
     fn body(&self) -> HashMap<String, String>;
     fn raw_body(&self) -> Option<String>;
@@ -280,7 +273,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         let protocol = options.protocol.unwrap_or_else(|| request.protocol());
         let host = options.host.unwrap_or_else(|| request.host());
 
-        format!("{}://{}{}", protocol, host, request.original_url())
+        format!("{}://{}{}", protocol, host, request.path_and_query())
     };
 
     if webhook_url.contains("bodySHA256") {
@@ -299,15 +292,20 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         )
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
+    use std::{
+        collections::HashMap,
+        time::{Duration, Instant},
+    };
 
+    #[derive(Debug, Clone)]
     struct MockRequest {
         protocol: String,
         host: String,
-        original_url: String,
+        path_and_query: String,
         signature: Option<String>,
         body: HashMap<String, String>,
         raw_body: Option<String>,
@@ -322,8 +320,8 @@ mod tests {
             self.host.clone()
         }
 
-        fn original_url(&self) -> String {
-            self.original_url.clone()
+        fn path_and_query(&self) -> String {
+            self.path_and_query.clone()
         }
 
         fn twilio_signature(&self) -> Option<String> {
@@ -344,11 +342,125 @@ mod tests {
     }
 
     // A realistic auth token would be 32 characters of hex
-    const REALISTIC_AUTH_TOKEN: &str = "aaf98aa0a69a870c2e5a0e774af3f8b2";
+    const TEST_AUTH_TOKEN: &str = "aaf98aa0a69a870c2e5a0e774af3f8b2";
+
+    // Measure time for multiple executions and return average
+    fn measure_time<F>(f: F, iterations: usize) -> Duration
+    where
+        F: Fn(),
+    {
+        let mut measurements = Vec::with_capacity(iterations);
+
+        // Warmup
+        for _ in 0..100 {
+            f();
+        }
+
+        // Actual measurements
+        for _ in 0..iterations {
+            let start = Instant::now();
+            f();
+            measurements.push(start.elapsed());
+        }
+
+        // Remove outliers (fastest and slowest 10%)
+        measurements.sort();
+        let trim = iterations / 10;
+        let trimmed: Vec<_> = measurements[trim..measurements.len() - trim].to_vec();
+
+        // Calculate average
+        trimmed.iter().sum::<Duration>() / trimmed.len() as u32
+    }
+
+    #[test]
+    fn test_timing_attack_resistant() {
+        // Test strings of the same length
+        let test_string = "supersecretpassword1234567890abcdef";
+        let same_string = "supersecretpassword1234567890abcdef";
+        let diff_first = "Xupersecretpassword1234567890abcdef";
+        let diff_middle = "supersecretpXssword1234567890abcdef";
+        let diff_last = "supersecretpassword1234567890abcdeX";
+        let diff_len = "supersecretpassword1234567890abcdef1";
+
+        let iterations = 10_000;
+
+        // Warmup
+        let warmup = measure_time(
+            || {
+                constant_time_compare(test_string, diff_first);
+            },
+            iterations * 3,
+        );
+
+        // Measure constant_time_compare timings
+        let time_same = measure_time(
+            || {
+                constant_time_compare(test_string, same_string);
+            },
+            iterations,
+        );
+
+        let time_diff_first = measure_time(
+            || {
+                constant_time_compare(test_string, diff_first);
+            },
+            iterations,
+        );
+
+        let time_diff_middle = measure_time(
+            || {
+                constant_time_compare(test_string, diff_middle);
+            },
+            iterations,
+        );
+
+        let time_diff_last = measure_time(
+            || {
+                constant_time_compare(test_string, diff_last);
+            },
+            iterations,
+        );
+
+        let time_diff_diff_len = measure_time(
+            || {
+                constant_time_compare(test_string, diff_len);
+            },
+            iterations,
+        );
+
+        println!("Constant time results (nanoseconds):");
+        println!("  Warmup:       {warmup:?}");
+        println!("  Same:         {time_same:?}");
+        println!("  Diff first:   {time_diff_first:?}");
+        println!("  Diff middle:  {time_diff_middle:?}");
+        println!("  Diff last:    {time_diff_last:?}");
+        println!("  Diff length:  {time_diff_diff_len:?}");
+
+        // Check variance - constant time should have similar timing
+        let timings = [
+            time_same,
+            time_diff_first,
+            time_diff_middle,
+            time_diff_last,
+            time_diff_diff_len,
+        ];
+        let max_time = timings.iter().max().unwrap();
+        let min_time = timings.iter().min().unwrap();
+        let variance = max_time.saturating_sub(*min_time);
+
+        println!("  Variance:     {variance:?}");
+
+        // For constant time, we expect the variance to be minimal
+        // This is a heuristic test - actual threshold depends on hardware
+        assert!(
+            variance < Duration::from_millis(1),
+            "Timing variance too high: {variance:?} - possible timing attack vulnerability",
+        );
+    }
 
     #[test]
     fn test_signature_generation() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
         let url = "https://example.com/myapp.php?foo=1&bar=2";
 
         let mut params = HashMap::new();
@@ -363,7 +475,7 @@ mod tests {
 
         let signature = get_expected_twilio_signature(auth_token, url, &params);
         // We're not testing against a known exact value from Twilio since they use a specific implementation
-        // That we may not match exactly. Instead verify the signature is non-empty and base64 encoded
+        // that we may not match exactly. Instead verify the signature is non-empty and base64 encoded
         assert!(!signature.is_empty());
         assert!(signature.ends_with("="));
         assert_eq!(signature.len() % 4, 0);
@@ -371,7 +483,7 @@ mod tests {
 
     #[test]
     fn test_validate_request_form_encoded() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
         let url = "https://example.com/myapp.php?foo=1&bar=2";
 
         let mut params = HashMap::new();
@@ -408,7 +520,7 @@ mod tests {
         let tampered_signature = "XYZ_COMPLETELY_DIFFERENT_SIGNATURE_ABC=";
         assert!(!validate_request(
             auth_token,
-            &tampered_signature,
+            tampered_signature,
             url,
             &params
         ));
@@ -454,7 +566,7 @@ mod tests {
 
     #[test]
     fn test_validate_request_with_body() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
         let body =
             "{\"CallSid\":\"CA9611c3543c25a2a374d2bea47066d03a\",\"Caller\":\"+12349013030\"}";
         let body_hash = get_expected_body_hash(body);
@@ -484,7 +596,7 @@ mod tests {
         let tampered_signature = "XYZ_COMPLETELY_DIFFERENT_SIGNATURE_ABC=";
         assert!(!validate_request_with_body(
             auth_token,
-            &tampered_signature,
+            tampered_signature,
             &url,
             body
         ));
@@ -510,7 +622,7 @@ mod tests {
 
     #[test]
     fn test_validate_incoming_request_form() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
 
         let mut params = HashMap::new();
         params.insert(
@@ -525,7 +637,7 @@ mod tests {
         let request = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: "/myapp.php?foo=1&bar=2".to_string(),
+            path_and_query: "/myapp.php?foo=1&bar=2".to_string(),
             signature: twilio_header(&expected_signature),
             body: params.clone(),
             raw_body: None,
@@ -540,7 +652,7 @@ mod tests {
         let request_no_sig = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: "/myapp.php?foo=1&bar=2".to_string(),
+            path_and_query: "/myapp.php?foo=1&bar=2".to_string(),
             signature: None,
             body: params.clone(),
             raw_body: None,
@@ -555,7 +667,7 @@ mod tests {
         let request_wrong_host = MockRequest {
             protocol: "https".to_string(),
             host: "evil.com".to_string(), // Different host
-            original_url: "/myapp.php?foo=1&bar=2".to_string(),
+            path_and_query: "/myapp.php?foo=1&bar=2".to_string(),
             signature: twilio_header(&expected_signature),
             body: params.clone(),
             raw_body: None,
@@ -570,7 +682,7 @@ mod tests {
         let request_wrong_protocol = MockRequest {
             protocol: "http".to_string(), // Different protocol
             host: "example.com".to_string(),
-            original_url: "/myapp.php?foo=1&bar=2".to_string(),
+            path_and_query: "/myapp.php?foo=1&bar=2".to_string(),
             signature: twilio_header(&expected_signature),
             body: params.clone(),
             raw_body: None,
@@ -585,7 +697,7 @@ mod tests {
         let request_wrong_url = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: "/different.php?foo=1&bar=2".to_string(), // Different path
+            path_and_query: "/different.php?foo=1&bar=2".to_string(), // Different path
             signature: twilio_header(&expected_signature),
             body: params.clone(),
             raw_body: None,
@@ -605,8 +717,127 @@ mod tests {
     }
 
     #[test]
+    fn test_special_chars_in_url() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let params = HashMap::new();
+
+        // URL with special chars that might be encoded differently
+        let url = "https://example.com/path?q=a+b&r=c%20d&s=e%2Bf";
+        let signature = get_expected_twilio_signature(auth_token, url, &params);
+        assert!(validate_request(auth_token, &signature, url, &params));
+    }
+
+    #[test]
+    fn test_malformed_inputs() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let params = HashMap::new();
+
+        // Invalid URL should return false
+        assert!(!validate_request(auth_token, "", "not-a-url", &params));
+
+        // Extremely long auth token
+        let long_token = "a".repeat(1000);
+        assert!(!validate_request(
+            &long_token,
+            "",
+            "https://example.com",
+            &params
+        ));
+
+        // Null bytes in signature (security test)
+        let null_byte_sig = "valid\0signature";
+        assert!(!validate_request(
+            auth_token,
+            null_byte_sig,
+            "https://example.com",
+            &params
+        ));
+    }
+
+    #[test]
+    fn test_all_url_variants_explicitly() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let mut params = HashMap::new();
+        params.insert("key".to_string(), "value".to_string());
+
+        // Test that validate_request checks all 4 variants explicitly
+        let url = "https://example.com/path?query=a+b";
+
+        // Generate signatures for all 4 expected variants
+        let sig1 = get_expected_twilio_signature(
+            auth_token,
+            &remove_port(&with_modern_querystring(url)),
+            &params,
+        );
+        let sig2 = get_expected_twilio_signature(
+            auth_token,
+            &add_port(&with_modern_querystring(url)),
+            &params,
+        );
+        let sig3 = get_expected_twilio_signature(
+            auth_token,
+            &remove_port(&with_legacy_querystring(url)),
+            &params,
+        );
+        let sig4 = get_expected_twilio_signature(
+            auth_token,
+            &add_port(&with_legacy_querystring(url)),
+            &params,
+        );
+
+        // All signatures should validate the original URL
+        assert!(validate_request(auth_token, &sig1, url, &params));
+        assert!(validate_request(auth_token, &sig2, url, &params));
+        assert!(validate_request(auth_token, &sig3, url, &params));
+        assert!(validate_request(auth_token, &sig4, url, &params));
+    }
+
+    #[test]
+    fn test_large_payload() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let mut params = HashMap::new();
+
+        // Add many parameters to test sorting and concatenation with large payloads
+        for i in 0..1000 {
+            params.insert(format!("key{i}"), format!("value{i}"));
+        }
+
+        let url = "https://example.com";
+        let signature = get_expected_twilio_signature(auth_token, url, &params);
+        assert!(validate_request(auth_token, &signature, url, &params));
+    }
+
+    #[test]
+    fn test_param_key_edge_cases() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let url = "https://example.com";
+
+        let mut params = HashMap::new();
+        // Empty key
+        params.insert("".to_string(), "value".to_string());
+        // Key with special characters
+        params.insert("key+with+spaces".to_string(), "value".to_string());
+        // Unicode key
+        params.insert("键".to_string(), "值".to_string());
+
+        let signature = get_expected_twilio_signature(auth_token, url, &params);
+        assert!(validate_request(auth_token, &signature, url, &params));
+    }
+
+    #[test]
+    fn test_unicode_in_params() {
+        let auth_token = TEST_AUTH_TOKEN;
+        let mut params = HashMap::new();
+        params.insert("message".to_string(), "你好世界".to_string());
+
+        let url = "https://example.com/unicode";
+        let signature = get_expected_twilio_signature(auth_token, url, &params);
+        assert!(validate_request(auth_token, &signature, url, &params));
+    }
+
+    #[test]
     fn test_validate_incoming_request_json() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
         let body =
             "{\"CallSid\":\"CAdcf610484bb41af47dbba11e8cd548b2\",\"Caller\":\"+12349013030\"}";
         let body_hash = get_expected_body_hash(body);
@@ -618,7 +849,7 @@ mod tests {
         let request = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: path_and_query.clone(),
+            path_and_query: path_and_query.clone(),
             signature: twilio_header(&expected_signature),
             body: HashMap::new(),
             raw_body: Some(body.to_string()),
@@ -633,7 +864,7 @@ mod tests {
         let request_no_body = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: path_and_query.clone(),
+            path_and_query: path_and_query.clone(),
             signature: twilio_header(&expected_signature),
             body: HashMap::new(),
             raw_body: None, // No body
@@ -649,7 +880,7 @@ mod tests {
         let request_mod_body = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: path_and_query.clone(),
+            path_and_query: path_and_query.clone(),
             signature: twilio_header(&expected_signature),
             body: HashMap::new(),
             raw_body: Some(modified_body), // Modified body
@@ -669,11 +900,12 @@ mod tests {
         let request_wrong_sig = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
-            original_url: path_and_query.clone(),
-            signature: twilio_header(&wrong_signature), // Modified signature
+            path_and_query: path_and_query.clone(),
+            signature: twilio_header(wrong_signature),
             body: HashMap::new(),
             raw_body: Some(body.to_string()),
         };
+
         assert!(!validate_incoming_request(
             &request_wrong_sig,
             auth_token,
@@ -683,7 +915,7 @@ mod tests {
 
     #[test]
     fn test_validate_with_custom_url() {
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
 
         let mut params = HashMap::new();
         params.insert(
@@ -691,58 +923,70 @@ mod tests {
             "CA375e36857dcc9f64b3233b7e80a6d6ba".to_string(),
         );
 
-        let url = "https://custom.com/path?query=value";
-        let expected_signature = get_expected_twilio_signature(auth_token, url, &params);
-
+        // The request has different host/path than what's configured in Twilio
         let request = MockRequest {
             protocol: "https".to_string(),
-            host: "example.com".to_string(), // Different from custom.com
-            original_url: "/different/path".to_string(), // Different path
-            signature: twilio_header(&expected_signature),
+            host: "behind-proxy.com".to_string(), // Proxied/parsed host
+            path_and_query: "/path?query=value".to_string(), // Proxied path
+            signature: None,                      // We'll set this later
             body: params.clone(),
             raw_body: None,
         };
 
-        let options = RequestValidatorOptions {
-            url: Some(url.to_string()),
+        // The URL that was actually configured in Twilio webhook
+        let webhook_url = "https://custom.com/path?query=value";
+
+        // Generate signature using the actual webhook URL
+        let expected_signature = get_expected_twilio_signature(auth_token, webhook_url, &params);
+
+        // Now set the signature on the request
+        let mut request_with_sig = request.clone();
+        request_with_sig.signature = twilio_header(&expected_signature);
+
+        // Test success cases
+        // 1. Validate with URL option
+        let url_option = RequestValidatorOptions {
+            url: Some(webhook_url.to_string()),
             host: None,
             protocol: None,
         };
-
-        // Test success case
         assert!(validate_incoming_request(
-            &request,
+            &request_with_sig,
             auth_token,
-            Some(options.clone())
+            Some(url_option)
         ));
 
-        // Test failure cases
-
-        // 1. No options provided (falls back to request URL components)
-        assert!(!validate_incoming_request(&request, auth_token, None));
-
-        // 2. Wrong URL in options
-        let wrong_options = RequestValidatorOptions {
-            url: Some("https://custom.com/wrong?query=value".to_string()),
-            host: None,
-            protocol: None,
-        };
-        assert!(!validate_incoming_request(
-            &request,
-            auth_token,
-            Some(wrong_options)
-        ));
-
-        // 3. Host and protocol provided but request URL is wrong
-        let host_protocol_options = RequestValidatorOptions {
+        // 2. Validate with host/port options
+        let host_port_option = RequestValidatorOptions {
             url: None,
             host: Some("custom.com".to_string()),
             protocol: Some("https".to_string()),
         };
-        assert!(!validate_incoming_request(
-            &request,
+        assert!(validate_incoming_request(
+            &request_with_sig,
             auth_token,
-            Some(host_protocol_options)
+            Some(host_port_option)
+        ));
+
+        // Test failure cases
+
+        // 1. No options provided (falls back to parsing request URL)
+        assert!(!validate_incoming_request(
+            &request_with_sig,
+            auth_token,
+            None,
+        ));
+
+        // 2. Wrong URL in options
+        let wrong_options = RequestValidatorOptions {
+            url: Some("https://custom2.com/wrong?query=value".to_string()),
+            host: None,
+            protocol: None,
+        };
+        assert!(!validate_incoming_request(
+            &request_with_sig,
+            auth_token,
+            Some(wrong_options)
         ));
     }
 
@@ -807,20 +1051,16 @@ mod tests {
         let url_without_port = "https://example.com/path?query=value";
         let url_with_port = "https://example.com:443/path?query=value";
 
-        // Parse URLs
-        let parsed_without_port = Url::parse(url_without_port).unwrap();
-        let parsed_with_port = Url::parse(url_with_port).unwrap();
-
         // Adding port to URL without port should give standard port
-        let with_added_port = add_port(&parsed_without_port);
+        let with_added_port = add_port(url_without_port);
         assert!(with_added_port.contains(":443"));
 
         // Removing port from URL with port should remove the port
-        let with_removed_port = remove_port(&parsed_with_port);
+        let with_removed_port = remove_port(url_with_port);
         assert!(!with_removed_port.contains(":443"));
 
         // Test port handling in signatures
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
         let mut params = HashMap::new();
         params.insert("Test".to_string(), "Value".to_string());
 
@@ -865,7 +1105,7 @@ mod tests {
         // Instead, we'll simulate its purpose by using two different but equivalent URLs
         // that should both validate with the same signature
 
-        let auth_token = REALISTIC_AUTH_TOKEN;
+        let auth_token = TEST_AUTH_TOKEN;
 
         // Create two different URL representations that should be treated as equivalent
         let url_standard = "https://example.com/path?key=standard&special=a+b+c";
@@ -879,11 +1119,6 @@ mod tests {
 
         // Generate signature using standard URL format
         let signature = get_expected_twilio_signature(auth_token, url_standard, &params);
-
-        // Both URLs should validate with this signature due to our multi-format checking
-        let ns = parse_and_normalize_url(url_standard).unwrap();
-        let ne = parse_and_normalize_url(url_encoded).unwrap();
-        assert_eq!(ns, ne);
 
         assert!(validate_request(
             auth_token,

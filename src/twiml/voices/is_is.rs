@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals)]
 
-use crate::{STANDARD_VOICE_PRICE, VoicePrice};
+use crate::twiml::{VoicePrice, voices::STANDARD_VOICE_PRICE};
 
 use serde::{Deserialize, Serialize};
 
@@ -23,7 +23,7 @@ pub mod standard {
             }
         }
 
-        impl From<Male> for crate::Voice {
+        impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::IsIs(super::super::Voice::Standard(super::Voice::Polly(
                     Voice::Male(value),
@@ -46,7 +46,7 @@ pub mod standard {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::IsIs(super::super::Voice::Standard(super::Voice::Polly(
                     Voice::Female(value),
@@ -84,7 +84,7 @@ pub mod standard {
             }
         }
 
-        impl From<Female> for crate::Voice {
+        impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::IsIs(super::super::Voice::Standard(super::Voice::Google(
                     Voice::Female(value),
@@ -134,14 +134,14 @@ impl VoicePrice for Voice {
 
 pub mod female {
     pub mod standard {
+        pub mod google {
+            use super::super::super::standard::google::*;
+            pub const StandardB: Female = Female::StandardB;
+        }
         pub mod polly {
             use super::super::super::standard::polly::*;
             pub const Dora: Female = Female::Dora;
             pub const Dóra: Female = Female::Dóra;
-        }
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Female = Female::StandardB;
         }
     }
 }
