@@ -1,6 +1,6 @@
 use axum::{
     body::Body,
-    extract::{OriginalUri, Request},
+    extract::Request,
     http::{StatusCode, request::Parts},
     response::Response,
 };
@@ -75,13 +75,9 @@ where
         let mut inner = self.inner.clone();
 
         Box::pin(async move {
-            println!("req headers: {:#?}", request.headers());
             // Extract request parts and original URI
             let (parts, body) = request.into_parts();
             let original_uri = parts.uri.clone();
-
-            println!("original_uri: {original_uri}");
-            println!("headers: {:#?}", parts.headers);
 
             // Collect the body
             let body_bytes = body

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::{Language, Voice, VoicePrice, voices::GENERATIVE_VOICE_PRICE};
+use super::{Language, Voice, VoicePrice};
 
 /// TwiML Voice: <Say>
 /// https://www.twilio.com/docs/voice/twiml/say

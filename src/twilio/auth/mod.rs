@@ -3,7 +3,6 @@ pub mod middleware;
 
 use base64::{Engine as _, engine::general_purpose};
 use hmac::{Hmac, Mac};
-use rand::{Rng, distr::Alphanumeric};
 use regex::{Regex, RegexBuilder};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
@@ -60,9 +59,6 @@ pub fn get_expected_twilio_signature(
         }
     }
 
-    #[cfg(debug_assertions)]
-    println!("URL for signature: {url}");
-
     // Create HMAC-SHA1 with the auth token
     let mut mac =
         HmacSha1::new_from_slice(auth_token.as_bytes()).expect("HMAC can take key of any size");
@@ -75,8 +71,7 @@ pub fn get_expected_twilio_signature(
 
     #[cfg(debug_assertions)]
     {
-        println!("Auth token: {auth_token}");
-        println!("Signature: {signature}");
+        println!("Signature: {signature}, URL: {url}");
     }
 
     signature
@@ -237,8 +232,6 @@ pub fn validate_request(
     .flat_map(|v| [without_trailing_slash(&v), v])
     .collect::<HashSet<_>>();
 
-    println!("Variants: {variants:#?}");
-
     variants.iter().any(|variant_url| {
         validate_signature_with_url(auth_token, twilio_header, variant_url, params)
     })
@@ -312,7 +305,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
 ) -> bool {
     let options = opts.unwrap_or_default();
     #[cfg(debug_assertions)]
-    let mut validated_with: &str;
+    let validated_with: &str;
 
     let webhook_url = if let Some(url) = options.url {
         #[cfg(debug_assertions)]
@@ -333,7 +326,6 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         });
 
         let url = format!("{}://{}{}", protocol, host, request.path_and_query());
-        println!("request.path_and_query(): {}", request.path_and_query());
         #[cfg(debug_assertions)]
         {
             validated_with = match (custom_protocol, custom_host) {

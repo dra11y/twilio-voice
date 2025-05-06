@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de};
 use typed_builder::TypedBuilder;
 
 use super::{Digit, Language, Method, Pause, Play, Say, VoicePrice};
@@ -89,7 +89,15 @@ pub enum Timeout {
     #[serde(rename = "auto")]
     Auto,
     #[serde(untagged)]
-    Seconds(u8),
+    Seconds(#[serde(deserialize_with = "deserialize_seconds")] u8),
+}
+
+fn deserialize_seconds<'de, D>(deserializer: D) -> Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    s.parse().map_err(de::Error::custom)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
