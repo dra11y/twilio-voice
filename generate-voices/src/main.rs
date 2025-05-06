@@ -25,7 +25,8 @@ const DIR_PATH: &str = "../src/twiml/voices";
 const TWILIO_DOC_URL: &str =
     "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
 /// Common Rust derive macros for voice enums
-const ENUM_DERIVE: &str = "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]";
+const ENUM_DERIVE: &str =
+    "#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]";
 
 /// Represents a single voice option with its metadata
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -186,7 +187,7 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
         return Ok(html_content);
     }
 
-    println!("Cache not found, fetching from web...");
+    println!("Cache not found, fetching: {TWILIO_DOC_URL} ...");
     let options = LaunchOptions {
         headless: true,
         ..Default::default()
@@ -195,9 +196,8 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
     let tab = browser.new_tab()?;
 
     tab.navigate_to(TWILIO_DOC_URL)?;
-    println!("Waiting for page to load and JavaScript to execute...");
-    tab.wait_for_element("table tbody tr")?;
-    std::thread::sleep(std::time::Duration::from_secs(5));
+    println!("Waiting for navigation...");
+    tab.wait_until_navigated()?;
 
     let html_content = tab.get_content()?;
     let mut cache_file = File::create(&cache_path)?;
@@ -456,7 +456,7 @@ fn generate_lang_file(
         match_arms.push((
             None,
             format!("Voice::{voice_type}(_)"),
-            format!("{voice_type_const}_VOICE_PRICE"),
+            format!("Some({voice_type_const}_VOICE_PRICE)"),
         ));
     }
 
@@ -527,7 +527,7 @@ fn generate_main_file(
         r#"
         pub trait VoicePrice {{
             /// Cost of the voice per 100 characters (rounded down per call)
-            fn price(&self) -> f32;
+            fn price(&self) -> Option<f32>;
         }}
     "#
     )?;
@@ -617,12 +617,12 @@ fn write_voice_price_impl(
     match_arms: Option<&[(Option<String>, String, String)]>,
 ) -> Result<(), Box<dyn Error>> {
     writeln!(output, "    impl VoicePrice for {type_name} {{")?;
-    writeln!(output, "        fn price(&self) -> f32 {{")?;
+    writeln!(output, "        fn price(&self) -> Option<f32> {{")?;
 
     if let Some(arms) = match_arms {
         writeln!(output, "            match self {{")?;
-        for (feature_name, pattern, result) in arms {
-            if let Some(feature_name) = feature_name {
+        for (cfg_feature, pattern, result) in arms {
+            if let Some(feature_name) = cfg_feature {
                 writeln!(
                     output,
                     r#"                #[cfg(feature = "{feature_name}")]"#
@@ -634,7 +634,7 @@ fn write_voice_price_impl(
     } else {
         writeln!(
             output,
-            "            {}_VOICE_PRICE",
+            "            Some({}_VOICE_PRICE)",
             voice_type.unwrap().to_case(Case::Constant)
         )?;
     }

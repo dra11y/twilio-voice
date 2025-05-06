@@ -13,7 +13,7 @@ pub mod neural {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.cs-CZ-Wavenet-B")]
@@ -21,8 +21,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -34,28 +34,28 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            NEURAL_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(NEURAL_VOICE_PRICE)
         }
     }
 }
@@ -66,7 +66,7 @@ pub mod standard {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.cs-CZ-Standard-B")]
@@ -74,8 +74,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -87,43 +87,43 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            STANDARD_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(STANDARD_VOICE_PRICE)
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Neural(neural::Voice),
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         match self {
-            Voice::Neural(_) => NEURAL_VOICE_PRICE,
-            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+            Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
+            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
         }
     }
 }

@@ -33,7 +33,7 @@ impl Response {
 }
 
 impl VoicePrice for Response {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         self.verbs
             .iter()
             .filter_map(|v| match v {
@@ -168,7 +168,7 @@ mod tests {
         let response: Response = quick_xml::de::from_str(&xml).unwrap();
         let blocks = text.len() / 100;
         let expected_price = NEURAL_VOICE_PRICE * blocks as f32;
-        assert_eq!(response.price(), expected_price);
+        assert_eq!(response.price(), Some(expected_price));
         let ResponseVerb::Say(say) = &response.verbs[0] else {
             panic!("Expected Say verb");
         };
@@ -233,7 +233,7 @@ mod tests {
         let welcome_blocks = (welcome_text.len() / 100) as f32;
         let selection_blocks = (selection_text.len() / 100) as f32;
         let expected_price = STANDARD_VOICE_PRICE * (welcome_blocks + selection_blocks);
-        assert_eq!(resp.price(), expected_price);
+        assert_eq!(resp.price(), Some(expected_price));
     }
 
     #[test]
@@ -289,7 +289,7 @@ mod tests {
         let account_blocks = (account_text.len() / 100) as f32;
         let pound_blocks = (pound_text.len() / 100) as f32;
         let expected_price = NEURAL_VOICE_PRICE * (account_blocks + pound_blocks);
-        assert_eq!(resp.price(), expected_price);
+        assert_eq!(resp.price(), Some(expected_price));
     }
 
     #[test]
@@ -336,7 +336,7 @@ mod tests {
         // Calculate correct pricing for generative voice
         let speech_blocks = (speech_text.len() / 100) as f32;
         let expected_price = GENERATIVE_VOICE_PRICE * speech_blocks;
-        assert_eq!(resp.price(), expected_price);
+        assert_eq!(resp.price(), Some(expected_price));
     }
 
     #[test]
@@ -406,6 +406,6 @@ mod tests {
         let fallback_text_blocks =
             "We didn't receive any input. Please call back later.".len() / 100;
         let expected_price = NEURAL_VOICE_PRICE * (menu_text_blocks + fallback_text_blocks) as f32;
-        assert_eq!(resp.price(), expected_price);
+        assert_eq!(resp.price(), Some(expected_price));
     }
 }

@@ -13,30 +13,7 @@ pub mod neural {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.fil-PH-Wavenet-A")]
-            WavenetA,
-            #[serde(rename = "Google.fil-PH-Wavenet-B")]
-            WavenetB,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
-            }
-        }
-
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::FilPh(super::super::Voice::Neural(super::Voice::Google(
-                    Voice::Female(value),
-                )))
-            }
-        }
-
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.fil-PH-Wavenet-C")]
@@ -46,8 +23,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -59,29 +36,52 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.fil-PH-Wavenet-A")]
+            WavenetA,
+            #[serde(rename = "Google.fil-PH-Wavenet-B")]
+            WavenetB,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::FilPh(super::super::Voice::Neural(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
             Male(Male),
+            Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            NEURAL_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(NEURAL_VOICE_PRICE)
         }
     }
 }
@@ -92,7 +92,7 @@ pub mod standard {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.fil-PH-Standard-A")]
@@ -102,8 +102,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -115,7 +115,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.fil-PH-Standard-C")]
@@ -125,8 +125,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -138,7 +138,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -146,36 +146,36 @@ pub mod standard {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            STANDARD_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(STANDARD_VOICE_PRICE)
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Neural(neural::Voice),
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         match self {
-            Voice::Neural(_) => NEURAL_VOICE_PRICE,
-            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+            Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
+            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
         }
     }
 }

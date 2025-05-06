@@ -1,16 +1,19 @@
 use axum::{
     body::Body,
-    extract::Request,
+    extract::{OriginalUri, Request},
     http::{StatusCode, request::Parts},
     response::Response,
 };
 use bytes::Bytes;
 use futures_util::future::BoxFuture;
+use http::Uri;
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 use url::form_urlencoded;
+
+use super::TwilioRequest;
 
 #[derive(Clone)]
 pub struct TwilioLayer {
@@ -72,8 +75,13 @@ where
         let mut inner = self.inner.clone();
 
         Box::pin(async move {
-            // Extract request parts
+            println!("req headers: {:#?}", request.headers());
+            // Extract request parts and original URI
             let (parts, body) = request.into_parts();
+            let original_uri = parts.uri.clone();
+
+            println!("original_uri: {original_uri}");
+            println!("headers: {:#?}", parts.headers);
 
             // Collect the body
             let body_bytes = body
@@ -85,6 +93,7 @@ where
 
             // Create a TwilioRequest implementation
             let twilio_request = TwilioRequestImpl {
+                original_uri,
                 parts: parts.clone(),
                 body_bytes: body_bytes.clone(),
             };
@@ -98,7 +107,6 @@ where
                     .body(if cfg!(debug_assertions) {
                         Body::from("Invalid Twilio signature")
                     } else {
-                        // Do not give hackers any hint in production!
                         Body::empty()
                     })
                     .unwrap());
@@ -113,37 +121,45 @@ where
     }
 }
 
-// Implementation of TwilioRequest trait for Axum Request
+// Implementation of TwilioRequest trait using OriginalUri
 struct TwilioRequestImpl {
+    original_uri: Uri,
     parts: Parts,
     body_bytes: Bytes,
 }
 
-impl super::TwilioRequest for TwilioRequestImpl {
+impl TwilioRequest for TwilioRequestImpl {
     fn protocol(&self) -> String {
-        // Extract protocol from headers or default to https
-        if let Some(proto) = self.parts.headers.get("x-forwarded-proto") {
-            proto.to_str().unwrap_or("https").to_string()
-        } else {
-            "https".to_string()
-        }
+        self.original_uri
+            .scheme_str()
+            .unwrap_or("http") // Default to http if scheme is missing
+            .to_string()
     }
 
     fn host(&self) -> String {
-        self.parts
-            .headers
-            .get("host")
-            .and_then(|h| h.to_str().ok())
-            .map(String::from)
-            .unwrap_or_default()
+        self.original_uri
+            .authority()
+            .map(|auth| auth.to_string())
+            .unwrap_or_else(|| {
+                // Fallback to Host header only if absolutely necessary
+                self.parts
+                    .headers
+                    .get("host")
+                    .and_then(|h| h.to_str().ok())
+                    .unwrap_or_default()
+                    .to_string()
+            })
     }
 
     fn path_and_query(&self) -> String {
-        let uri = &self.parts.uri;
         format!(
             "{path}{query}",
-            path = uri.path(),
-            query = uri.query().map(|q| format!("?{q}")).unwrap_or_default()
+            path = self.original_uri.path(),
+            query = self
+                .original_uri
+                .query()
+                .map(|q| format!("?{q}"))
+                .unwrap_or_default()
         )
     }
 

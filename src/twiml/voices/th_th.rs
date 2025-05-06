@@ -13,7 +13,7 @@ pub mod generative {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.th-TH-Chirp3-HD-Aoede")]
@@ -27,8 +27,8 @@ pub mod generative {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
 
@@ -40,7 +40,7 @@ pub mod generative {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.th-TH-Chirp3-HD-Charon")]
@@ -54,8 +54,8 @@ pub mod generative {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
 
@@ -67,7 +67,7 @@ pub mod generative {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -75,21 +75,21 @@ pub mod generative {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            GENERATIVE_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(GENERATIVE_VOICE_PRICE)
         }
     }
 }
@@ -100,7 +100,7 @@ pub mod standard {
     pub mod google {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.th-TH-Standard-A")]
@@ -108,8 +108,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -121,43 +121,43 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            STANDARD_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(STANDARD_VOICE_PRICE)
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Generative(generative::Voice),
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         match self {
-            Voice::Generative(_) => GENERATIVE_VOICE_PRICE,
-            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+            Voice::Generative(_) => Some(GENERATIVE_VOICE_PRICE),
+            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
         }
     }
 }

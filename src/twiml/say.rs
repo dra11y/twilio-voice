@@ -22,20 +22,9 @@ pub struct Say {
 }
 
 impl VoicePrice for Say {
-    /// If voice is not set, assume the most expensive voice type.
-    fn price(&self) -> f32 {
-        (self.text.len() / 100) as f32
-            * self
-                .voice
-                .map(|v| v.price())
-                .unwrap_or(GENERATIVE_VOICE_PRICE)
-    }
-}
-
-impl<A, B, D> SayBuilder<(A, B, (Option<Voice>,), D)> {
-    /// Provide a way to unset the voice, since we strip the Option in the builder.
-    pub fn unset_voice(mut self) -> SayBuilder<(A, B, (Option<Voice>,), D)> {
-        self.fields.2 = (None,);
-        self
+    fn price(&self) -> Option<f32> {
+        self.voice
+            .and_then(|v| v.price())
+            .map(|p| p * (self.text.len() / 100) as f32)
     }
 }

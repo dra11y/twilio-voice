@@ -1,12 +1,12 @@
-// Auto-generated at: 2025-05-04 04:04
+// Auto-generated at: 2025-05-05 20:08
 // Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
 
-/// Current price of Generative voices per 100 chars as of 2025-05-04 04:04 UTC
+/// Current price of Generative voices per 100 chars as of 2025-05-05 20:08 UTC
 pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
-/// Current price of Standard voices per 100 chars as of 2025-05-04 04:04 UTC
+/// Current price of Standard voices per 100 chars as of 2025-05-05 20:08 UTC
 pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
-/// Current price of Neural voices per 100 chars as of 2025-05-04 04:04 UTC
+/// Current price of Neural voices per 100 chars as of 2025-05-05 20:08 UTC
 pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
 
 #[cfg(feature = "af-za")]
@@ -146,10 +146,10 @@ use serde::{Deserialize, Serialize};
 
 pub trait VoicePrice {
     /// Cost of the voice per 100 characters (rounded down per call)
-    fn price(&self) -> f32;
+    fn price(&self) -> Option<f32>;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Language {
     #[cfg(feature = "af-za")]
@@ -352,7 +352,7 @@ pub enum Language {
     YueHk,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 #[non_exhaustive]
 pub enum Voice {
@@ -491,7 +491,7 @@ pub enum Voice {
 }
 
 impl VoicePrice for Voice {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         match self {
             #[cfg(feature = "af-za")]
             Voice::AfZa(af_za) => af_za.price(),

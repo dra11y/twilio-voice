@@ -13,7 +13,7 @@ pub mod generative {
     pub mod polly {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Mía-Generative")]
@@ -21,8 +21,8 @@ pub mod generative {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
 
@@ -34,7 +34,7 @@ pub mod generative {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Polly.Andres-Generative")]
@@ -42,8 +42,8 @@ pub mod generative {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
 
@@ -55,7 +55,7 @@ pub mod generative {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -63,21 +63,21 @@ pub mod generative {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                GENERATIVE_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(GENERATIVE_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            GENERATIVE_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(GENERATIVE_VOICE_PRICE)
         }
     }
 }
@@ -88,7 +88,7 @@ pub mod neural {
     pub mod polly {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Mia-Neural")]
@@ -96,8 +96,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -109,7 +109,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Polly.Andres-Neural")]
@@ -117,8 +117,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -130,7 +130,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -138,21 +138,21 @@ pub mod neural {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                NEURAL_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            NEURAL_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(NEURAL_VOICE_PRICE)
         }
     }
 }
@@ -163,7 +163,7 @@ pub mod standard {
     pub mod polly {
         use super::*;
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Mia")]
@@ -171,8 +171,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -184,33 +184,33 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> f32 {
-                STANDARD_VOICE_PRICE
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> f32 {
-            STANDARD_VOICE_PRICE
+        fn price(&self) -> Option<f32> {
+            Some(STANDARD_VOICE_PRICE)
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Generative(generative::Voice),
@@ -218,11 +218,11 @@ pub enum Voice {
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> f32 {
+    fn price(&self) -> Option<f32> {
         match self {
-            Voice::Generative(_) => GENERATIVE_VOICE_PRICE,
-            Voice::Neural(_) => NEURAL_VOICE_PRICE,
-            Voice::Standard(_) => STANDARD_VOICE_PRICE,
+            Voice::Generative(_) => Some(GENERATIVE_VOICE_PRICE),
+            Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
+            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
         }
     }
 }

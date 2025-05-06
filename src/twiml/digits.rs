@@ -84,7 +84,9 @@ impl Digits {
 // TwiML Voice: Voices List:
 // https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, strum::AsRefStr, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, strum::AsRefStr, strum::Display, Serialize, Deserialize,
+)]
 pub enum Digit {
     #[strum(serialize = "0")]
     #[serde(rename = "0")]

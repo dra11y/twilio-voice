@@ -57,14 +57,21 @@ pub struct Gather {
 }
 
 impl VoicePrice for Gather {
-    fn price(&self) -> f32 {
-        self.verbs
+    fn price(&self) -> Option<f32> {
+        let says = self
+            .verbs
             .iter()
             .filter_map(|v| match v {
-                GatherVerb::Say(say) => Some(say.price()),
+                GatherVerb::Say(say) => Some(say),
                 _ => None,
             })
-            .sum()
+            .collect::<Vec<_>>();
+        let prices = says.iter().filter_map(|s| s.price()).collect::<Vec<_>>();
+        if prices.is_empty() || prices.len() != says.len() {
+            None
+        } else {
+            Some(prices.iter().sum())
+        }
     }
 }
 
