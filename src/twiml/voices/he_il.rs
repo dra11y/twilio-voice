@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::twiml::{
-    VoicePrice,
+    Gender, VoiceGender, VoicePrice,
     voices::{NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
 };
 
@@ -28,6 +28,12 @@ pub mod neural {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::HeIl(super::super::Voice::Neural(super::Voice::Google(
@@ -51,6 +57,12 @@ pub mod neural {
             }
         }
 
+        impl VoiceGender for Male {
+            fn gender(&self) -> Gender {
+                Gender::Male
+            }
+        }
+
         impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::HeIl(super::super::Voice::Neural(super::Voice::Google(
@@ -71,6 +83,15 @@ pub mod neural {
                 Some(NEURAL_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                    Voice::Male(_) => Gender::Male,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -82,6 +103,14 @@ pub mod neural {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(NEURAL_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Google(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -104,6 +133,12 @@ pub mod standard {
         impl VoicePrice for Male {
             fn price(&self) -> Option<f32> {
                 Some(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Male {
+            fn gender(&self) -> Gender {
+                Gender::Male
             }
         }
 
@@ -130,6 +165,12 @@ pub mod standard {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::HeIl(super::super::Voice::Standard(super::Voice::Google(
@@ -150,6 +191,15 @@ pub mod standard {
                 Some(STANDARD_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Male(_) => Gender::Male,
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -161,6 +211,14 @@ pub mod standard {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(STANDARD_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Google(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -176,6 +234,15 @@ impl VoicePrice for Voice {
         match self {
             Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
             Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
+        }
+    }
+}
+
+impl VoiceGender for Voice {
+    fn gender(&self) -> Gender {
+        match self {
+            Voice::Neural(voice) => voice.gender(),
+            Voice::Standard(voice) => voice.gender(),
         }
     }
 }

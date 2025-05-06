@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::twiml::{
-    VoicePrice,
+    Gender, VoiceGender, VoicePrice,
     voices::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE},
 };
 
@@ -26,6 +26,12 @@ pub mod generative {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::EnZa(super::super::Voice::Generative(super::Voice::Polly(
@@ -45,6 +51,14 @@ pub mod generative {
                 Some(GENERATIVE_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,6 +70,14 @@ pub mod generative {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(GENERATIVE_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Polly(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -79,6 +101,12 @@ pub mod neural {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::EnZa(super::super::Voice::Neural(super::Voice::Polly(
@@ -98,6 +126,14 @@ pub mod neural {
                 Some(NEURAL_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -109,6 +145,14 @@ pub mod neural {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(NEURAL_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Polly(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -124,6 +168,15 @@ impl VoicePrice for Voice {
         match self {
             Voice::Generative(_) => Some(GENERATIVE_VOICE_PRICE),
             Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
+        }
+    }
+}
+
+impl VoiceGender for Voice {
+    fn gender(&self) -> Gender {
+        match self {
+            Voice::Generative(voice) => voice.gender(),
+            Voice::Neural(voice) => voice.gender(),
         }
     }
 }

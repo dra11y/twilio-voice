@@ -1,13 +1,13 @@
-// Auto-generated at: 2025-05-05 20:08
+// Auto-generated at: 2025-05-06 23:11
 // Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
 
-/// Current price of Generative voices per 100 chars as of 2025-05-05 20:08 UTC
-pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
-/// Current price of Standard voices per 100 chars as of 2025-05-05 20:08 UTC
+/// Current price of Standard voices per 100 chars as of 2025-05-06 23:11 UTC
 pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
-/// Current price of Neural voices per 100 chars as of 2025-05-05 20:08 UTC
+/// Current price of Neural voices per 100 chars as of 2025-05-06 23:11 UTC
 pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
+/// Current price of Generative voices per 100 chars as of 2025-05-06 23:11 UTC
+pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
 
 #[cfg(feature = "af-za")]
 pub mod af_za;
@@ -147,6 +147,21 @@ use serde::{Deserialize, Serialize};
 pub trait VoicePrice {
     /// Cost of the voice per 100 characters (rounded down per call)
     fn price(&self) -> Option<f32>;
+}
+
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[non_exhaustive]
+#[serde(rename = "kebab-case")]
+pub enum Gender {
+    Female,
+    FemaleChild,
+    Male,
+    MaleChild,
+}
+
+pub trait VoiceGender {
+    /// Gender of the voice
+    fn gender(&self) -> Gender;
 }
 
 #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -356,6 +371,10 @@ pub enum Language {
 #[serde(untagged)]
 #[non_exhaustive]
 pub enum Voice {
+    #[serde(rename = "man")]
+    Man,
+    #[serde(rename = "woman")]
+    Woman,
     #[cfg(feature = "af-za")]
     AfZa(af_za::Voice),
     #[cfg(feature = "ar-ae")]
@@ -493,6 +512,8 @@ pub enum Voice {
 impl VoicePrice for Voice {
     fn price(&self) -> Option<f32> {
         match self {
+            Voice::Man => Some(0.),
+            Voice::Woman => Some(0.),
             #[cfg(feature = "af-za")]
             Voice::AfZa(af_za) => af_za.price(),
             #[cfg(feature = "ar-ae")]
@@ -625,6 +646,147 @@ impl VoicePrice for Voice {
             Voice::YueCn(yue_cn) => yue_cn.price(),
             #[cfg(feature = "yue-hk")]
             Voice::YueHk(yue_hk) => yue_hk.price(),
+        }
+    }
+}
+
+impl VoiceGender for Voice {
+    fn gender(&self) -> Gender {
+        match self {
+            Voice::Man => Gender::Male,
+            Voice::Woman => Gender::Female,
+            #[cfg(feature = "af-za")]
+            Voice::AfZa(af_za) => af_za.gender(),
+            #[cfg(feature = "ar-ae")]
+            Voice::ArAe(ar_ae) => ar_ae.gender(),
+            #[cfg(feature = "ar-xa")]
+            Voice::ArXa(ar_xa) => ar_xa.gender(),
+            #[cfg(feature = "arb")]
+            Voice::Arb(arb) => arb.gender(),
+            #[cfg(feature = "bg-bg")]
+            Voice::BgBg(bg_bg) => bg_bg.gender(),
+            #[cfg(feature = "bn-in")]
+            Voice::BnIn(bn_in) => bn_in.gender(),
+            #[cfg(feature = "ca-es")]
+            Voice::CaEs(ca_es) => ca_es.gender(),
+            #[cfg(feature = "cmn-cn")]
+            Voice::CmnCn(cmn_cn) => cmn_cn.gender(),
+            #[cfg(feature = "cmn-tw")]
+            Voice::CmnTw(cmn_tw) => cmn_tw.gender(),
+            #[cfg(feature = "cs-cz")]
+            Voice::CsCz(cs_cz) => cs_cz.gender(),
+            #[cfg(feature = "cy-gb")]
+            Voice::CyGb(cy_gb) => cy_gb.gender(),
+            #[cfg(feature = "da-dk")]
+            Voice::DaDk(da_dk) => da_dk.gender(),
+            #[cfg(feature = "de-at")]
+            Voice::DeAt(de_at) => de_at.gender(),
+            #[cfg(feature = "de-de")]
+            Voice::DeDe(de_de) => de_de.gender(),
+            #[cfg(feature = "el-gr")]
+            Voice::ElGr(el_gr) => el_gr.gender(),
+            #[cfg(feature = "en-au")]
+            Voice::EnAu(en_au) => en_au.gender(),
+            #[cfg(feature = "en-gb")]
+            Voice::EnGb(en_gb) => en_gb.gender(),
+            #[cfg(feature = "en-gb-wls")]
+            Voice::EnGbWls(en_gb_wls) => en_gb_wls.gender(),
+            #[cfg(feature = "en-ie")]
+            Voice::EnIe(en_ie) => en_ie.gender(),
+            #[cfg(feature = "en-in")]
+            Voice::EnIn(en_in) => en_in.gender(),
+            #[cfg(feature = "en-nz")]
+            Voice::EnNz(en_nz) => en_nz.gender(),
+            #[cfg(feature = "en-us")]
+            Voice::EnUs(en_us) => en_us.gender(),
+            #[cfg(feature = "en-za")]
+            Voice::EnZa(en_za) => en_za.gender(),
+            #[cfg(feature = "es-es")]
+            Voice::EsEs(es_es) => es_es.gender(),
+            #[cfg(feature = "es-mx")]
+            Voice::EsMx(es_mx) => es_mx.gender(),
+            #[cfg(feature = "es-us")]
+            Voice::EsUs(es_us) => es_us.gender(),
+            #[cfg(feature = "eu-es")]
+            Voice::EuEs(eu_es) => eu_es.gender(),
+            #[cfg(feature = "fi-fi")]
+            Voice::FiFi(fi_fi) => fi_fi.gender(),
+            #[cfg(feature = "fil-ph")]
+            Voice::FilPh(fil_ph) => fil_ph.gender(),
+            #[cfg(feature = "fr-be")]
+            Voice::FrBe(fr_be) => fr_be.gender(),
+            #[cfg(feature = "fr-ca")]
+            Voice::FrCa(fr_ca) => fr_ca.gender(),
+            #[cfg(feature = "fr-fr")]
+            Voice::FrFr(fr_fr) => fr_fr.gender(),
+            #[cfg(feature = "gl-es")]
+            Voice::GlEs(gl_es) => gl_es.gender(),
+            #[cfg(feature = "gu-in")]
+            Voice::GuIn(gu_in) => gu_in.gender(),
+            #[cfg(feature = "he-il")]
+            Voice::HeIl(he_il) => he_il.gender(),
+            #[cfg(feature = "hi-in")]
+            Voice::HiIn(hi_in) => hi_in.gender(),
+            #[cfg(feature = "hu-hu")]
+            Voice::HuHu(hu_hu) => hu_hu.gender(),
+            #[cfg(feature = "id-id")]
+            Voice::IdId(id_id) => id_id.gender(),
+            #[cfg(feature = "is-is")]
+            Voice::IsIs(is_is) => is_is.gender(),
+            #[cfg(feature = "it-it")]
+            Voice::ItIt(it_it) => it_it.gender(),
+            #[cfg(feature = "ja-jp")]
+            Voice::JaJp(ja_jp) => ja_jp.gender(),
+            #[cfg(feature = "kn-in")]
+            Voice::KnIn(kn_in) => kn_in.gender(),
+            #[cfg(feature = "ko-kr")]
+            Voice::KoKr(ko_kr) => ko_kr.gender(),
+            #[cfg(feature = "lt-lt")]
+            Voice::LtLt(lt_lt) => lt_lt.gender(),
+            #[cfg(feature = "lv-lv")]
+            Voice::LvLv(lv_lv) => lv_lv.gender(),
+            #[cfg(feature = "ml-in")]
+            Voice::MlIn(ml_in) => ml_in.gender(),
+            #[cfg(feature = "mr-in")]
+            Voice::MrIn(mr_in) => mr_in.gender(),
+            #[cfg(feature = "ms-my")]
+            Voice::MsMy(ms_my) => ms_my.gender(),
+            #[cfg(feature = "nb-no")]
+            Voice::NbNo(nb_no) => nb_no.gender(),
+            #[cfg(feature = "nl-be")]
+            Voice::NlBe(nl_be) => nl_be.gender(),
+            #[cfg(feature = "nl-nl")]
+            Voice::NlNl(nl_nl) => nl_nl.gender(),
+            #[cfg(feature = "pa-in")]
+            Voice::PaIn(pa_in) => pa_in.gender(),
+            #[cfg(feature = "pl-pl")]
+            Voice::PlPl(pl_pl) => pl_pl.gender(),
+            #[cfg(feature = "pt-br")]
+            Voice::PtBr(pt_br) => pt_br.gender(),
+            #[cfg(feature = "pt-pt")]
+            Voice::PtPt(pt_pt) => pt_pt.gender(),
+            #[cfg(feature = "ro-ro")]
+            Voice::RoRo(ro_ro) => ro_ro.gender(),
+            #[cfg(feature = "ru-ru")]
+            Voice::RuRu(ru_ru) => ru_ru.gender(),
+            #[cfg(feature = "sk-sk")]
+            Voice::SkSk(sk_sk) => sk_sk.gender(),
+            #[cfg(feature = "sv-se")]
+            Voice::SvSe(sv_se) => sv_se.gender(),
+            #[cfg(feature = "ta-in")]
+            Voice::TaIn(ta_in) => ta_in.gender(),
+            #[cfg(feature = "te-in")]
+            Voice::TeIn(te_in) => te_in.gender(),
+            #[cfg(feature = "th-th")]
+            Voice::ThTh(th_th) => th_th.gender(),
+            #[cfg(feature = "tr-tr")]
+            Voice::TrTr(tr_tr) => tr_tr.gender(),
+            #[cfg(feature = "vi-vn")]
+            Voice::ViVn(vi_vn) => vi_vn.gender(),
+            #[cfg(feature = "yue-cn")]
+            Voice::YueCn(yue_cn) => yue_cn.gender(),
+            #[cfg(feature = "yue-hk")]
+            Voice::YueHk(yue_hk) => yue_hk.gender(),
         }
     }
 }

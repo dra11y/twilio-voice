@@ -311,7 +311,10 @@ fn generate_lang_file(
 
     writeln!(lang_file)?;
     writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
-    writeln!(lang_file, "use crate::twiml::{{VoicePrice, voices::{{")?;
+    writeln!(
+        lang_file,
+        "use crate::twiml::{{Gender, VoiceGender, VoicePrice, voices::{{"
+    )?;
     for voice_type in type_groups.keys() {
         writeln!(
             lang_file,
@@ -378,6 +381,12 @@ fn generate_lang_file(
                 writeln!(lang_file, "        }}\n")?;
 
                 write_voice_price_impl(&mut lang_file, gender, Some(voice_type), None)?;
+                write_voice_gender_impl(
+                    &mut lang_file,
+                    gender,
+                    Some(&format!("Gender::{gender}")),
+                    None,
+                )?;
 
                 writeln!(
                     lang_file,
@@ -397,12 +406,22 @@ fn generate_lang_file(
             writeln!(lang_file, "        {ENUM_DERIVE}")?;
             writeln!(lang_file, "        #[serde(untagged)]")?;
             writeln!(lang_file, "        pub enum Voice {{")?;
+
+            let mut gender_arms = Vec::new();
             for gender in gender_maps.keys() {
                 writeln!(lang_file, "            {gender}({gender}),")?;
+
+                gender_arms.push((
+                    None,
+                    format!("Voice::{gender}(_)"),
+                    format!("Gender::{gender}"),
+                ));
             }
             writeln!(lang_file, "        }}\n")?;
 
             write_voice_price_impl(&mut lang_file, "Voice", Some(voice_type), None)?;
+
+            write_voice_gender_impl(&mut lang_file, "Voice", None, Some(&gender_arms))?;
 
             writeln!(lang_file, "    }}\n")?;
         }
@@ -428,6 +447,17 @@ fn generate_lang_file(
 
         write_voice_price_impl(&mut lang_file, "Voice", Some(voice_type), None)?;
 
+        let mut gender_arms = Vec::new();
+        for provider in provider_groups.keys() {
+            gender_arms.push((
+                None,
+                format!("Voice::{provider}(voice)"),
+                "voice.gender()".to_string(),
+            ));
+        }
+
+        write_voice_gender_impl(&mut lang_file, "Voice", None, Some(&gender_arms))?;
+
         writeln!(lang_file, "}}\n")?;
     }
 
@@ -450,17 +480,25 @@ fn generate_lang_file(
     writeln!(lang_file, "}}")?;
 
     // Implement price calculation for the language's Voice enum
-    let mut match_arms = Vec::new();
+    let mut price_arms = Vec::new();
+    let mut gender_arms = Vec::new();
+
     for voice_type in type_groups.keys() {
         let voice_type_const = voice_type.to_case(Case::Constant);
-        match_arms.push((
+        price_arms.push((
             None,
             format!("Voice::{voice_type}(_)"),
             format!("Some({voice_type_const}_VOICE_PRICE)"),
         ));
+        gender_arms.push((
+            None,
+            format!("Voice::{voice_type}(voice)"),
+            "voice.gender()".to_string(),
+        ));
     }
 
-    write_voice_price_impl(&mut lang_file, "Voice", None, Some(&match_arms))?;
+    write_voice_price_impl(&mut lang_file, "Voice", None, Some(&price_arms))?;
+    write_voice_gender_impl(&mut lang_file, "Voice", None, Some(&gender_arms))?;
 
     // Generate gender-based alias modules for easier access
     generate_gender_aliases(&mut lang_file, &type_groups)?;
@@ -532,6 +570,34 @@ fn generate_main_file(
     "#
     )?;
 
+    let mut genders = voices
+        .iter()
+        .map(|v| v.gender.clone())
+        .collect::<HashSet<_>>()
+        .iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    genders.sort();
+    let genders = genders.join(", ");
+
+    // Define the VoiceGender trait to provide the gender of the voice
+    writeln!(
+        main_file,
+        r#"
+        {ENUM_DERIVE}
+        #[non_exhaustive]
+        #[serde(rename = "kebab-case")]
+        pub enum Gender {{
+            {genders}
+        }}
+
+        pub trait VoiceGender {{
+            /// Gender of the voice
+            fn gender(&self) -> Gender;
+        }}
+    "#
+    )?;
+
     // Create the top-level Language enum
     writeln!(main_file, "{ENUM_DERIVE}")?;
     writeln!(main_file, "#[non_exhaustive]")?;
@@ -550,6 +616,10 @@ fn generate_main_file(
     writeln!(main_file, "{ENUM_DERIVE}")?;
     writeln!(main_file, "#[serde(untagged)]\n#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
+    writeln!(
+        main_file,
+        r#"#[serde(rename = "man")] Man, #[serde(rename = "woman")] Woman,"#
+    )?;
     for lang_code in &lang_codes {
         let module_name = lang_code.to_case(Case::Snake);
         let variant_name = module_name.to_case(Case::Pascal);
@@ -560,19 +630,39 @@ fn generate_main_file(
     writeln!(main_file, "}}\n")?;
 
     // Implement the VoicePrice trait for the Voice enum
-    let mut match_arms = Vec::new();
+    let mut price_arms = Vec::new();
+    let mut gender_arms = Vec::new();
+
+    for gender in ["Man", "Woman"] {
+        price_arms.push((None, format!("Voice::{gender}"), "Some(0.)".to_string()));
+        gender_arms.push((
+            None,
+            format!("Voice::{gender}"),
+            format!(
+                "Gender::{}",
+                if gender == "Woman" { "Female" } else { "Male" }
+            ),
+        ));
+    }
+
     for lang_code in &lang_codes {
         let variant_name = lang_code.to_case(Case::Pascal);
         let lang_code_snake = lang_code.to_case(Case::Snake);
         let feature_name = lang_code.to_case(Case::Kebab);
-        match_arms.push((
-            Some(feature_name),
+        price_arms.push((
+            Some(feature_name.clone()),
             format!("Voice::{variant_name}({lang_code_snake})"),
             format!("{lang_code_snake}.price()"),
         ));
+        gender_arms.push((
+            Some(feature_name),
+            format!("Voice::{variant_name}({lang_code_snake})"),
+            format!("{lang_code_snake}.gender()"),
+        ));
     }
 
-    write_voice_price_impl(&mut main_file, "Voice", None, Some(&match_arms))?;
+    write_voice_price_impl(&mut main_file, "Voice", None, Some(&price_arms))?;
+    write_voice_gender_impl(&mut main_file, "Voice", None, Some(&gender_arms))?;
 
     // Write the file to disk
     File::create(Path::new(DIR_PATH).join("mod.rs"))?.write_all(main_file.as_bytes())?;
@@ -637,6 +727,38 @@ fn write_voice_price_impl(
             "            Some({}_VOICE_PRICE)",
             voice_type.unwrap().to_case(Case::Constant)
         )?;
+    }
+
+    writeln!(output, "        }}")?;
+    writeln!(output, "    }}\n")?;
+
+    Ok(())
+}
+
+/// Implements the VoiceGender trait for various voice types
+fn write_voice_gender_impl(
+    output: &mut String,
+    type_name: &str,
+    gender: Option<&str>,
+    match_arms: Option<&[(Option<String>, String, String)]>,
+) -> Result<(), Box<dyn Error>> {
+    writeln!(output, "    impl VoiceGender for {type_name} {{")?;
+    writeln!(output, "        fn gender(&self) -> Gender {{")?;
+
+    if let Some(arms) = match_arms {
+        writeln!(output, "            match self {{")?;
+        for (cfg_feature, pattern, result) in arms {
+            if let Some(feature_name) = cfg_feature {
+                writeln!(
+                    output,
+                    r#"                #[cfg(feature = "{feature_name}")]"#
+                )?;
+            }
+            writeln!(output, "                {pattern} => {result},")?;
+        }
+        writeln!(output, "            }}")?;
+    } else {
+        writeln!(output, "            {}", gender.unwrap())?;
     }
 
     writeln!(output, "        }}")?;

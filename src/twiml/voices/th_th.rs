@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use crate::twiml::{
-    VoicePrice,
+    Gender, VoiceGender, VoicePrice,
     voices::{GENERATIVE_VOICE_PRICE, STANDARD_VOICE_PRICE},
 };
 
@@ -32,6 +32,12 @@ pub mod generative {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::ThTh(super::super::Voice::Generative(super::Voice::Google(
@@ -59,6 +65,12 @@ pub mod generative {
             }
         }
 
+        impl VoiceGender for Male {
+            fn gender(&self) -> Gender {
+                Gender::Male
+            }
+        }
+
         impl From<Male> for crate::twiml::Voice {
             fn from(value: Male) -> Self {
                 Self::ThTh(super::super::Voice::Generative(super::Voice::Google(
@@ -79,6 +91,15 @@ pub mod generative {
                 Some(GENERATIVE_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                    Voice::Male(_) => Gender::Male,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,6 +111,14 @@ pub mod generative {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(GENERATIVE_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Google(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -113,6 +142,12 @@ pub mod standard {
             }
         }
 
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
         impl From<Female> for crate::twiml::Voice {
             fn from(value: Female) -> Self {
                 Self::ThTh(super::super::Voice::Standard(super::Voice::Google(
@@ -132,6 +167,14 @@ pub mod standard {
                 Some(STANDARD_VOICE_PRICE)
             }
         }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
     }
 
     #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
@@ -143,6 +186,14 @@ pub mod standard {
     impl VoicePrice for Voice {
         fn price(&self) -> Option<f32> {
             Some(STANDARD_VOICE_PRICE)
+        }
+    }
+
+    impl VoiceGender for Voice {
+        fn gender(&self) -> Gender {
+            match self {
+                Voice::Google(voice) => voice.gender(),
+            }
         }
     }
 }
@@ -158,6 +209,15 @@ impl VoicePrice for Voice {
         match self {
             Voice::Generative(_) => Some(GENERATIVE_VOICE_PRICE),
             Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
+        }
+    }
+}
+
+impl VoiceGender for Voice {
+    fn gender(&self) -> Gender {
+        match self {
+            Voice::Generative(voice) => voice.gender(),
+            Voice::Standard(voice) => voice.gender(),
         }
     }
 }

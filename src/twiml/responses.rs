@@ -121,7 +121,8 @@ pub struct Pause {
 #[cfg(test)]
 mod tests {
     use crate::twiml::{
-        Digit, GatherBuilderVerbs, GatherVerb, InputType, Language, SpeechModel, SpeechTimeout,
+        GatherBuilderVerbs, GatherDigit, GatherVerb, InputType, Language, SpeechModel,
+        SpeechTimeout,
         voices::{self, GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
     };
 
@@ -129,6 +130,20 @@ mod tests {
 
     #[test]
     fn test_say() {
+        let resp = Response::builder()
+            .say(
+                Say::builder()
+                    .text("Hello".to_string())
+                    .voice(voices::Voice::Woman)
+                    .build(),
+            )
+            .build();
+        let xml = quick_xml::se::to_string(&resp).unwrap();
+        assert_eq!(
+            xml,
+            r#"<Response><Say voice="woman" loop="1">Hello</Say></Response>"#
+        );
+
         let resp = Response::builder()
             .say(
                 Say::builder()
@@ -397,7 +412,7 @@ mod tests {
     fn test_gather_with_finish_on_key() {
         let gather = Gather::builder()
             .action("/handle_input".to_string())
-            .finish_on_key(Digit::Pound)
+            .finish_on_key(GatherDigit::Pound)
             .say(
                 Say::builder()
                     .text("Enter your pin followed by the pound key.".to_string())

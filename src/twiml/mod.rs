@@ -17,7 +17,7 @@ mod say;
 pub use say::*;
 
 pub mod voices;
-pub use voices::{Language, Voice, VoicePrice};
+pub use voices::{Gender, Language, Voice, VoiceGender, VoicePrice};
 
 use serde::{Deserialize, Serialize};
 
