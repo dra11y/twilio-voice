@@ -121,7 +121,7 @@ pub struct Pause {
 #[cfg(test)]
 mod tests {
     use crate::twiml::{
-        Digit, InputType, Language, SpeechModel, Timeout,
+        Digit, GatherBuilderVerbs, GatherVerb, InputType, Language, SpeechModel, SpeechTimeout,
         voices::{self, GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
     };
 
@@ -202,6 +202,43 @@ mod tests {
     }
 
     #[test]
+    fn test_deserialize_gather_with_speech_timeout() {
+        let text = "Excepteur et labore in excepteur enim nisi tempor. Commodo ex eiusmod incididunt occaecat commodo dolor consequat. Consectetur laboris velit dolore tempor Lorem adipisicing anim occaecat.";
+        for speech_timeout in [
+            (r#"speechTimeout="auto""#, Some(SpeechTimeout::Auto)),
+            (r#"speechTimeout="30""#, Some(SpeechTimeout::Seconds(30))),
+            ("", None),
+        ] {
+            let xml = format!(
+                r#"
+                    <Response>
+                        <Gather action="" actionOnEmptyResult="false" input="dtmf" language="en-US" method="POST" numDigits="10" {speech_timeout}>
+                            <Say voice="Google.en-US-Wavenet-C" loop="1">{text}</Say>
+                        </Gather>
+                    </Response>
+                "#,
+                speech_timeout = speech_timeout.0,
+            );
+            let response: Response = quick_xml::de::from_str(&xml).unwrap();
+            let blocks = text.len() / 100;
+            let expected_price = NEURAL_VOICE_PRICE * blocks as f32;
+            assert_eq!(response.price(), Some(expected_price));
+            let ResponseVerb::Gather(gather) = &response.verbs[0] else {
+                panic!("Expected Gather verb");
+            };
+            assert_eq!(gather.speech_timeout, speech_timeout.1);
+            let GatherVerb::Say(say) = &gather.verbs[0] else {
+                panic!("Expected Say verb inside Gather");
+            };
+            assert_eq!(say.text, text);
+            assert_eq!(
+                say.voice,
+                Some(voices::en_us::female::neural::google::WavenetC.into())
+            );
+        }
+    }
+
+    #[test]
     fn test_multiple_verbs() {
         let welcome_text = "Welcome to our service.";
         let selection_text = "Please make a selection.";
@@ -241,7 +278,7 @@ mod tests {
         let gather = Gather::builder()
             .action("/process_input".to_string())
             .num_digits(1)
-            .timeout(Timeout::Auto)
+            .timeout(15)
             .say(
                 Say::builder()
                     .text("Please enter your account number.".to_string())
@@ -252,7 +289,7 @@ mod tests {
         let resp = Response::builder().gather(gather).build();
         let xml = quick_xml::se::to_string(&resp).unwrap();
         assert!(xml.contains("Please enter your account number"));
-        assert!(xml.contains(r#"timeout="auto""#));
+        assert!(xml.contains(r#"timeout="15""#));
     }
 
     #[test]
@@ -263,7 +300,7 @@ mod tests {
         let gather = Gather::builder()
             .action("/process_input".to_string())
             .num_digits(2)
-            .timeout(Timeout::Seconds(10))
+            .timeout(20)
             .say(
                 Say::builder()
                     .text(account_text.to_string())
@@ -282,7 +319,7 @@ mod tests {
         let xml = quick_xml::se::to_string(&resp).unwrap();
         assert!(xml.contains("Please enter your account number"));
         assert!(xml.contains("Followed by the pound sign"));
-        assert!(xml.contains(r#"timeout="10""#));
+        assert!(xml.contains(r#"timeout="20""#));
         assert!(xml.contains(r#"numDigits="2""#));
 
         // Calculate correct pricing based on text length
