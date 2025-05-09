@@ -141,14 +141,14 @@ mod tests {
         let xml = quick_xml::se::to_string(&resp).unwrap();
         assert_eq!(
             xml,
-            r#"<Response><Say voice="woman" loop="1">Hello</Say></Response>"#
+            r#"<Response><Say voice="Woman" loop="1">Hello</Say></Response>"#
         );
 
         let resp = Response::builder()
             .say(
                 Say::builder()
                     .text("Hello".to_string())
-                    .voice(voices::en_us::male::generative::google::Chirp3HdCharon.into())
+                    .voice(voices::en_us::generative::google::Male::Chirp3HdCharon.into())
                     .build(),
             )
             .build();
@@ -163,7 +163,7 @@ mod tests {
                 Say::builder()
                     .text("Hello".to_string())
                     .language(Language::EnUs)
-                    .voice(voices::en_us::male::generative::google::Chirp3HdCharon.into())
+                    .voice(voices::en_us::generative::google::Male::Chirp3HdCharon.into())
                     .build(),
             )
             .build();
@@ -190,8 +190,17 @@ mod tests {
         assert_eq!(say.text, text);
         assert_eq!(
             say.voice,
-            Some(voices::en_us::male::neural::google::Neural2A.into())
+            Some(voices::en_us::neural::google::Male::Neural2A.into())
         );
+
+        let xml = format!(
+            r#"<Response><Say language="en-US" voice="Woman" loop="1">{text}</Say></Response>"#
+        );
+        let response: Response = quick_xml::de::from_str(&xml).unwrap();
+        let ResponseVerb::Say(say) = &response.verbs[0] else {
+            panic!("Expected Say verb");
+        };
+        assert_eq!(say.voice, Some(voices::Voice::Woman));
     }
 
     #[test]
@@ -248,7 +257,7 @@ mod tests {
             assert_eq!(say.text, text);
             assert_eq!(
                 say.voice,
-                Some(voices::en_us::female::neural::google::WavenetC.into())
+                Some(voices::en_us::neural::google::Female::WavenetC.into())
             );
         }
     }
@@ -262,7 +271,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text(welcome_text.to_string())
-                    .voice(voices::en_us::female::standard::polly::Joanna.into())
+                    .voice(voices::en_us::standard::polly::Female::Joanna.into())
                     .build(),
             )
             .pause(Pause::builder().length(3).build())
@@ -270,7 +279,7 @@ mod tests {
                 Say::builder()
                     .text(selection_text.to_string())
                     .language(Language::EnUs)
-                    .voice(voices::en_us::female::standard::polly::Joanna.into())
+                    .voice(voices::en_us::standard::polly::Female::Joanna.into())
                     .build(),
             )
             .build();
@@ -319,13 +328,13 @@ mod tests {
             .say(
                 Say::builder()
                     .text(account_text.to_string())
-                    .voice(voices::en_us::male::neural::google::Neural2D.into())
+                    .voice(voices::en_us::neural::google::Male::Neural2D.into())
                     .build(),
             )
             .say(
                 Say::builder()
                     .text(pound_text.to_string())
-                    .voice(voices::en_us::male::neural::google::Neural2D.into())
+                    .voice(voices::en_us::neural::google::Male::Neural2D.into())
                     .build(),
             )
             .build();
@@ -350,7 +359,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text("This message will repeat three times.".to_string())
-                    .voice(voices::en_us::female::neural::polly::RuthNeural.into())
+                    .voice(voices::en_us::neural::polly::Female::RuthNeural.into())
                     .loop_count(3)
                     .build(),
             )
@@ -375,7 +384,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text(speech_text.to_string())
-                    .voice(voices::en_us::female::generative::google::Chirp3HdAoede.into())
+                    .voice(voices::en_us::generative::google::Female::Chirp3HdAoede.into())
                     .build(),
             )
             .build();
@@ -397,7 +406,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text("Thank you for calling. Goodbye!".to_string())
-                    .voice(voices::en_us::female::neural::polly::KendraNeural.into())
+                    .voice(voices::en_us::neural::polly::Female::KendraNeural.into())
                     .build(),
             )
             .hangup()
@@ -416,7 +425,7 @@ mod tests {
             .say(
                 Say::builder()
                     .text("Enter your pin followed by the pound key.".to_string())
-                    .voice(voices::en_us::male::neural::polly::JoeyNeural.into())
+                    .voice(voices::en_us::neural::polly::Male::JoeyNeural.into())
                     .build(),
             )
             .build();
@@ -434,14 +443,14 @@ mod tests {
             .say(
                 Say::builder()
                     .text("Welcome to Acme Corporation. Press 1 for sales, 2 for support, or 3 for billing.".to_string())
-                    .voice(voices::en_us::female::neural::google::Neural2F.into())
+                    .voice(voices::en_us::neural::google::Female::Neural2F.into())
                     .build(),
             )
             .build();
 
         let fallback = Say::builder()
             .text("We didn't receive any input. Please call back later.".to_string())
-            .voice(voices::en_us::female::neural::google::Neural2F.into())
+            .voice(voices::en_us::neural::google::Female::Neural2F.into())
             .build();
 
         let resp = Response::builder().gather(main_menu).say(fallback).build();

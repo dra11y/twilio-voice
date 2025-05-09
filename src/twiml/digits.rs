@@ -1,4 +1,8 @@
-use std::{fmt, ops::Index, str::FromStr};
+use std::{
+    fmt,
+    ops::{Deref, Index},
+    str::FromStr,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -15,18 +19,26 @@ impl fmt::Debug for Digits {
     }
 }
 
+impl Deref for Digits {
+    type Target = [Digit];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Digits {
-    pub fn iter(&self) -> std::slice::Iter<'_, Digit> {
-        self.0.iter()
-    }
+    // pub fn iter(&self) -> std::slice::Iter<'_, Digit> {
+    //     self.0.iter()
+    // }
 
-    pub fn len(&self) -> usize {
-        self.0.len()
-    }
+    // pub fn len(&self) -> usize {
+    //     self.0.len()
+    // }
 
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
+    // pub fn is_empty(&self) -> bool {
+    //     self.0.is_empty()
+    // }
 
     /// Return the integer value of the leading numeric digits if all non-numeric digits appear after all numeric digits; otherwise return None.
     pub fn to_int(&self) -> Result<u64> {

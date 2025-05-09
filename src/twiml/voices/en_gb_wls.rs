@@ -14,6 +14,7 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Polly.Geraint")]
+            #[strum(to_string = "Polly.Geraint")]
             Geraint,
         }
 
@@ -37,7 +38,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Male(Male),
@@ -58,7 +59,7 @@ pub mod standard {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
@@ -79,7 +80,7 @@ pub mod standard {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
@@ -96,15 +97,6 @@ impl VoiceGender for Voice {
     fn gender(&self) -> Gender {
         match self {
             Voice::Standard(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod male {
-    pub mod standard {
-        pub mod polly {
-            use super::super::super::standard::polly::*;
-            pub const Geraint: Male = Male::Geraint;
         }
     }
 }

@@ -17,6 +17,7 @@ pub mod generative {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Ayanda-Generative")]
+            #[strum(to_string = "Polly.Ayanda-Generative")]
             AyandaGenerative,
         }
 
@@ -40,7 +41,7 @@ pub mod generative {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -61,7 +62,7 @@ pub mod generative {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
@@ -92,6 +93,7 @@ pub mod neural {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Ayanda-Neural")]
+            #[strum(to_string = "Polly.Ayanda-Neural")]
             AyandaNeural,
         }
 
@@ -115,7 +117,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -136,7 +138,7 @@ pub mod neural {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
@@ -157,7 +159,7 @@ pub mod neural {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Generative(generative::Voice),
@@ -177,21 +179,6 @@ impl VoiceGender for Voice {
         match self {
             Voice::Generative(voice) => voice.gender(),
             Voice::Neural(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod generative {
-        pub mod polly {
-            use super::super::super::generative::polly::*;
-            pub const AyandaGenerative: Female = Female::AyandaGenerative;
-        }
-    }
-    pub mod neural {
-        pub mod polly {
-            use super::super::super::neural::polly::*;
-            pub const AyandaNeural: Female = Female::AyandaNeural;
         }
     }
 }

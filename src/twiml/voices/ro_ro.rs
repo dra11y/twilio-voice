@@ -17,6 +17,7 @@ pub mod neural {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ro-RO-Wavenet-B")]
+            #[strum(to_string = "Google.ro-RO-Wavenet-B")]
             WavenetB,
         }
 
@@ -40,7 +41,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -61,7 +62,7 @@ pub mod neural {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
@@ -85,57 +86,6 @@ pub mod neural {
 pub mod standard {
     use super::*;
 
-    pub mod polly {
-        use super::*;
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Polly.Carmen")]
-            Carmen,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Female {
-            fn gender(&self) -> Gender {
-                Gender::Female
-            }
-        }
-
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::RoRo(super::super::Voice::Standard(super::Voice::Polly(
-                    Voice::Female(value),
-                )))
-            }
-        }
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Female(Female),
-        }
-
-        impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Voice {
-            fn gender(&self) -> Gender {
-                match self {
-                    Voice::Female(_) => Gender::Female,
-                }
-            }
-        }
-    }
-
     pub mod google {
         use super::*;
 
@@ -143,6 +93,7 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.ro-RO-Standard-B")]
+            #[strum(to_string = "Google.ro-RO-Standard-B")]
             StandardB,
         }
 
@@ -166,7 +117,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -187,11 +138,63 @@ pub mod standard {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    pub mod polly {
+        use super::*;
+
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Polly.Carmen")]
+            #[strum(to_string = "Polly.Carmen")]
+            Carmen,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::RoRo(super::super::Voice::Standard(super::Voice::Polly(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Female(Female),
+        }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Polly(polly::Voice),
         Google(google::Voice),
+        Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
@@ -203,14 +206,14 @@ pub mod standard {
     impl VoiceGender for Voice {
         fn gender(&self) -> Gender {
             match self {
-                Voice::Polly(voice) => voice.gender(),
                 Voice::Google(voice) => voice.gender(),
+                Voice::Polly(voice) => voice.gender(),
             }
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Neural(neural::Voice),
@@ -230,25 +233,6 @@ impl VoiceGender for Voice {
         match self {
             Voice::Neural(voice) => voice.gender(),
             Voice::Standard(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod neural {
-        pub mod google {
-            use super::super::super::neural::google::*;
-            pub const WavenetB: Female = Female::WavenetB;
-        }
-    }
-    pub mod standard {
-        pub mod polly {
-            use super::super::super::standard::polly::*;
-            pub const Carmen: Female = Female::Carmen;
-        }
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Female = Female::StandardB;
         }
     }
 }

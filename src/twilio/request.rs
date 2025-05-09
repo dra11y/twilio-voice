@@ -43,7 +43,7 @@ pub enum Direction {
     OutboundDial,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 // #[cfg_attr(feature = "axum", derive(axum_macros::FromRequest))]
 #[serde(rename_all = "PascalCase")]
 pub struct Request {
@@ -107,6 +107,12 @@ pub struct Request {
 
     /// The country of the called party
     pub to_country: Option<String>,
+
+    /// If `<Gather input>` included `speech`, contains the transcribed result of the caller's speech.
+    pub speech_result: Option<String>,
+
+    /// If `<Gather input>` included `speech`, might contain (not guaranteed) a confidence score (between 0.0 and 1.0) of the accuracy of the transcription.
+    pub confidence: Option<f64>,
 }
 
 #[cfg(test)]

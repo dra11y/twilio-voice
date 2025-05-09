@@ -7,42 +7,69 @@ use serde::{Deserialize, Serialize};
 pub mod standard {
     use super::*;
 
-    pub mod polly {
+    pub mod google {
         use super::*;
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Male {
-            #[serde(rename = "Polly.Karl")]
-            Karl,
+        pub enum Female {
+            #[serde(rename = "Google.is-IS-Standard-B")]
+            #[strum(to_string = "Google.is-IS-Standard-B")]
+            StandardB,
         }
 
-        impl VoicePrice for Male {
+        impl VoicePrice for Female {
             fn price(&self) -> Option<f32> {
                 Some(STANDARD_VOICE_PRICE)
             }
         }
 
-        impl VoiceGender for Male {
+        impl VoiceGender for Female {
             fn gender(&self) -> Gender {
-                Gender::Male
+                Gender::Female
             }
         }
 
-        impl From<Male> for crate::twiml::Voice {
-            fn from(value: Male) -> Self {
-                Self::IsIs(super::super::Voice::Standard(super::Voice::Polly(
-                    Voice::Male(value),
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::IsIs(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Female(value),
                 )))
             }
         }
+
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+        #[serde(untagged)]
+        pub enum Voice {
+            Female(Female),
+        }
+
+        impl VoicePrice for Voice {
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Voice {
+            fn gender(&self) -> Gender {
+                match self {
+                    Voice::Female(_) => Gender::Female,
+                }
+            }
+        }
+    }
+
+    pub mod polly {
+        use super::*;
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Dora")]
+            #[strum(to_string = "Polly.Dora")]
             Dora,
             #[serde(rename = "Polly.Dóra")]
+            #[strum(to_string = "Polly.Dóra")]
             Dóra,
         }
 
@@ -67,62 +94,38 @@ pub mod standard {
         }
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[serde(untagged)]
-        pub enum Voice {
-            Male(Male),
-            Female(Female),
-        }
-
-        impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Voice {
-            fn gender(&self) -> Gender {
-                match self {
-                    Voice::Male(_) => Gender::Male,
-                    Voice::Female(_) => Gender::Female,
-                }
-            }
-        }
-    }
-
-    pub mod google {
-        use super::*;
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.is-IS-Standard-B")]
-            StandardB,
+        pub enum Male {
+            #[serde(rename = "Polly.Karl")]
+            #[strum(to_string = "Polly.Karl")]
+            Karl,
         }
 
-        impl VoicePrice for Female {
+        impl VoicePrice for Male {
             fn price(&self) -> Option<f32> {
                 Some(STANDARD_VOICE_PRICE)
             }
         }
 
-        impl VoiceGender for Female {
+        impl VoiceGender for Male {
             fn gender(&self) -> Gender {
-                Gender::Female
+                Gender::Male
             }
         }
 
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::IsIs(super::super::Voice::Standard(super::Voice::Google(
-                    Voice::Female(value),
+        impl From<Male> for crate::twiml::Voice {
+            fn from(value: Male) -> Self {
+                Self::IsIs(super::super::Voice::Standard(super::Voice::Polly(
+                    Voice::Male(value),
                 )))
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {
@@ -135,16 +138,17 @@ pub mod standard {
             fn gender(&self) -> Gender {
                 match self {
                     Voice::Female(_) => Gender::Female,
+                    Voice::Male(_) => Gender::Male,
                 }
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
-        Polly(polly::Voice),
         Google(google::Voice),
+        Polly(polly::Voice),
     }
 
     impl VoicePrice for Voice {
@@ -156,14 +160,14 @@ pub mod standard {
     impl VoiceGender for Voice {
         fn gender(&self) -> Gender {
             match self {
-                Voice::Polly(voice) => voice.gender(),
                 Voice::Google(voice) => voice.gender(),
+                Voice::Polly(voice) => voice.gender(),
             }
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
@@ -180,29 +184,6 @@ impl VoiceGender for Voice {
     fn gender(&self) -> Gender {
         match self {
             Voice::Standard(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod standard {
-        pub mod polly {
-            use super::super::super::standard::polly::*;
-            pub const Dora: Female = Female::Dora;
-            pub const Dóra: Female = Female::Dóra;
-        }
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Female = Female::StandardB;
-        }
-    }
-}
-
-pub mod male {
-    pub mod standard {
-        pub mod polly {
-            use super::super::super::standard::polly::*;
-            pub const Karl: Male = Male::Karl;
         }
     }
 }

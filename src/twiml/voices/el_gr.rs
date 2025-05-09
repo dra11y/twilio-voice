@@ -17,6 +17,7 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.el-GR-Standard-B")]
+            #[strum(to_string = "Google.el-GR-Standard-B")]
             StandardB,
         }
 
@@ -40,7 +41,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -61,7 +62,7 @@ pub mod standard {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
@@ -92,6 +93,7 @@ pub mod neural {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.el-GR-Wavenet-B")]
+            #[strum(to_string = "Google.el-GR-Wavenet-B")]
             WavenetB,
         }
 
@@ -115,7 +117,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -136,7 +138,7 @@ pub mod neural {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
@@ -157,7 +159,7 @@ pub mod neural {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
@@ -177,21 +179,6 @@ impl VoiceGender for Voice {
         match self {
             Voice::Standard(voice) => voice.gender(),
             Voice::Neural(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod standard {
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Female = Female::StandardB;
-        }
-    }
-    pub mod neural {
-        pub mod google {
-            use super::super::super::neural::google::*;
-            pub const WavenetB: Female = Female::WavenetB;
         }
     }
 }

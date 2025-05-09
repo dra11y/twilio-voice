@@ -14,6 +14,7 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.bg-BG-Standard-B")]
+            #[strum(to_string = "Google.bg-BG-Standard-B")]
             StandardB,
         }
 
@@ -37,7 +38,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Female(Female),
@@ -58,7 +59,7 @@ pub mod standard {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
@@ -79,7 +80,7 @@ pub mod standard {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
@@ -96,15 +97,6 @@ impl VoiceGender for Voice {
     fn gender(&self) -> Gender {
         match self {
             Voice::Standard(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod standard {
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Female = Female::StandardB;
         }
     }
 }

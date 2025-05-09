@@ -25,7 +25,8 @@ const DIR_PATH: &str = "../src/twiml/voices";
 const TWILIO_DOC_URL: &str =
     "https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages";
 /// Common Rust derive macros for voice enums
-const ENUM_DERIVE: &str =
+const ENUM_DERIVE: &str = "#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]";
+const ENUM_DERIVE_DISPLAY: &str =
     "#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]";
 
 /// Represents a single voice option with its metadata
@@ -225,76 +226,76 @@ fn generate_voice_module_structure(
     Ok(())
 }
 
-/// Generates gender alias convenience modules
-fn generate_gender_aliases(
-    lang_file: &mut String,
-    type_groups: &HashMap<String, Vec<&VoiceData>>,
-) -> Result<(), Box<dyn Error>> {
-    // Collect all genders first
-    let mut all_genders = HashSet::new();
-    for voices in type_groups.values() {
-        for voice in voices {
-            all_genders.insert(voice.gender.clone());
-        }
-    }
+// /// Generates gender alias convenience modules
+// fn generate_gender_aliases(
+//     lang_file: &mut String,
+//     type_groups: &HashMap<String, Vec<&VoiceData>>,
+// ) -> Result<(), Box<dyn Error>> {
+//     // Collect all genders first
+//     let mut all_genders = HashSet::new();
+//     for voices in type_groups.values() {
+//         for voice in voices {
+//             all_genders.insert(voice.gender.clone());
+//         }
+//     }
 
-    let mut all_genders: Vec<String> = all_genders.into_iter().collect();
-    all_genders.sort();
+//     let mut all_genders: Vec<String> = all_genders.into_iter().collect();
+//     all_genders.sort();
 
-    // For each gender, generate alias modules
-    for gender in all_genders {
-        writeln!(lang_file, "\npub mod {} {{", gender.to_case(Case::Snake))?;
+//     // For each gender, generate alias modules
+//     for gender in all_genders {
+//         writeln!(lang_file, "\npub mod {} {{", gender.to_case(Case::Snake))?;
 
-        // For each voice type that has this gender
-        for (voice_type, voices) in type_groups {
-            // Check if this voice type has voices of the current gender
-            let voices_with_gender: Vec<_> = voices.iter().filter(|v| v.gender == gender).collect();
+//         // For each voice type that has this gender
+//         for (voice_type, voices) in type_groups {
+//             // Check if this voice type has voices of the current gender
+//             let voices_with_gender: Vec<_> = voices.iter().filter(|v| v.gender == gender).collect();
 
-            if voices_with_gender.is_empty() {
-                continue;
-            }
+//             if voices_with_gender.is_empty() {
+//                 continue;
+//             }
 
-            let voice_type_module = voice_type.to_case(Case::Snake);
+//             let voice_type_module = voice_type.to_case(Case::Snake);
 
-            writeln!(lang_file, "    pub mod {voice_type_module} {{",)?;
+//             writeln!(lang_file, "    pub mod {voice_type_module} {{",)?;
 
-            // Group by provider
-            let provider_map = group_voices_by(&voices_with_gender, |v| v.provider.clone());
+//             // Group by provider
+//             let provider_map = group_voices_by(&voices_with_gender, |v| v.provider.clone());
 
-            // For each provider
-            for (provider, provider_voices) in provider_map {
-                let provider_module = provider.to_case(Case::Snake);
-                writeln!(lang_file, "        pub mod {provider_module} {{",)?;
-                writeln!(
-                    lang_file,
-                    "            use super::super::super::{voice_type_module}::{provider_module}::*;",
-                )?;
+//             // For each provider
+//             for (provider, provider_voices) in provider_map {
+//                 let provider_module = provider.to_case(Case::Snake);
+//                 writeln!(lang_file, "        pub mod {provider_module} {{",)?;
+//                 writeln!(
+//                     lang_file,
+//                     "            use super::super::super::{voice_type_module}::{provider_module}::*;",
+//                 )?;
 
-                // For each voice in this provider/gender combo
-                let mut voices: Vec<_> = provider_voices
-                    .iter()
-                    .map(|v| extract_short_name(&v.voice_name))
-                    .collect();
-                voices.sort();
+//                 // For each voice in this provider/gender combo
+//                 let mut voices: Vec<_> = provider_voices
+//                     .iter()
+//                     .map(|v| extract_short_name(&v.voice_name))
+//                     .collect();
+//                 voices.sort();
 
-                for voice in &voices {
-                    writeln!(
-                        lang_file,
-                        "            pub const {voice}: {gender} = {gender}::{voice};",
-                    )?;
-                }
+//                 for voice in &voices {
+//                     writeln!(
+//                         lang_file,
+//                         "            pub const {voice}: {gender} = {gender}::{voice};",
+//                     )?;
+//                 }
 
-                writeln!(lang_file, "        }}")?;
-            }
+//                 writeln!(lang_file, "        }}")?;
+//             }
 
-            writeln!(lang_file, "    }}")?;
-        }
+//             writeln!(lang_file, "    }}")?;
+//         }
 
-        writeln!(lang_file, "}}")?;
-    }
+//         writeln!(lang_file, "}}")?;
+//     }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 /// Generates a language-specific module file with voice types, providers, and genders
 fn generate_lang_file(
@@ -368,7 +369,7 @@ fn generate_lang_file(
                 if voice_map.is_empty() {
                     continue;
                 }
-                writeln!(lang_file, "        {ENUM_DERIVE}")?;
+                writeln!(lang_file, "        {ENUM_DERIVE_DISPLAY}")?;
                 writeln!(lang_file, "        #[non_exhaustive]")?;
                 writeln!(lang_file, "        pub enum {gender} {{")?;
                 let mut keys: Vec<_> = voice_map.keys().collect();
@@ -376,6 +377,10 @@ fn generate_lang_file(
                 for key in keys {
                     let full_name = &voice_map[key];
                     writeln!(lang_file, "            #[serde(rename = \"{full_name}\")]")?;
+                    writeln!(
+                        lang_file,
+                        "            #[strum(to_string = \"{full_name}\")]"
+                    )?;
                     writeln!(lang_file, "            {key},")?;
                 }
                 writeln!(lang_file, "        }}\n")?;
@@ -501,7 +506,7 @@ fn generate_lang_file(
     write_voice_gender_impl(&mut lang_file, "Voice", None, Some(&gender_arms))?;
 
     // Generate gender-based alias modules for easier access
-    generate_gender_aliases(&mut lang_file, &type_groups)?;
+    // generate_gender_aliases(&mut lang_file, &type_groups)?;
 
     // Write the file to disk
     File::create(Path::new(DIR_PATH).join(format!("{module_name}.rs")))?
@@ -584,8 +589,9 @@ fn generate_main_file(
     writeln!(
         main_file,
         r#"
-        {ENUM_DERIVE}
+        {ENUM_DERIVE_DISPLAY}
         #[non_exhaustive]
+        #[strum(serialize_all = "kebab-case")]
         #[serde(rename = "kebab-case")]
         pub enum Gender {{
             {genders}
@@ -599,7 +605,7 @@ fn generate_main_file(
     )?;
 
     // Create the top-level Language enum
-    writeln!(main_file, "{ENUM_DERIVE}")?;
+    writeln!(main_file, "{ENUM_DERIVE_DISPLAY}")?;
     writeln!(main_file, "#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Language {{")?;
     for lang_code in &lang_codes {
@@ -607,6 +613,7 @@ fn generate_main_file(
         let variant_name = module_name.to_case(Case::Pascal);
         let feature_name = lang_code.to_case(Case::Kebab);
         writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
+        writeln!(main_file, "    #[strum(to_string = \"{lang_code}\")]")?;
         writeln!(main_file, "    #[serde(rename = \"{lang_code}\")]")?;
         writeln!(main_file, "    {variant_name},")?;
     }
@@ -614,17 +621,18 @@ fn generate_main_file(
 
     // Create the top-level Voice enum with variants for each language
     writeln!(main_file, "{ENUM_DERIVE}")?;
-    writeln!(main_file, "#[serde(untagged)]\n#[non_exhaustive]")?;
+    writeln!(main_file, "#[non_exhaustive]")?;
     writeln!(main_file, "pub enum Voice {{")?;
     writeln!(
         main_file,
-        r#"#[serde(rename = "man")] Man, #[serde(rename = "woman")] Woman,"#
+        r#"#[serde(alias = "man")] Man, #[serde(alias = "woman")] Woman,"#
     )?;
     for lang_code in &lang_codes {
         let module_name = lang_code.to_case(Case::Snake);
         let variant_name = module_name.to_case(Case::Pascal);
         let feature_name = lang_code.to_case(Case::Kebab);
         writeln!(main_file, "    #[cfg(feature = \"{feature_name}\")]")?;
+        writeln!(main_file, "    #[serde(untagged)]")?;
         writeln!(main_file, "    {variant_name}({module_name}::Voice),")?;
     }
     writeln!(main_file, "}}\n")?;

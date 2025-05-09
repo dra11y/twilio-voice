@@ -14,8 +14,10 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.yue-HK-Standard-B")]
+            #[strum(to_string = "Google.yue-HK-Standard-B")]
             StandardB,
             #[serde(rename = "Google.yue-HK-Standard-D")]
+            #[strum(to_string = "Google.yue-HK-Standard-D")]
             StandardD,
         }
 
@@ -43,8 +45,10 @@ pub mod standard {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.yue-HK-Standard-A")]
+            #[strum(to_string = "Google.yue-HK-Standard-A")]
             StandardA,
             #[serde(rename = "Google.yue-HK-Standard-C")]
+            #[strum(to_string = "Google.yue-HK-Standard-C")]
             StandardC,
         }
 
@@ -68,7 +72,7 @@ pub mod standard {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Male(Male),
@@ -91,7 +95,7 @@ pub mod standard {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Google(google::Voice),
@@ -112,7 +116,7 @@ pub mod standard {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Standard(standard::Voice),
@@ -129,26 +133,6 @@ impl VoiceGender for Voice {
     fn gender(&self) -> Gender {
         match self {
             Voice::Standard(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod standard {
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardA: Female = Female::StandardA;
-            pub const StandardC: Female = Female::StandardC;
-        }
-    }
-}
-
-pub mod male {
-    pub mod standard {
-        pub mod google {
-            use super::super::super::standard::google::*;
-            pub const StandardB: Male = Male::StandardB;
-            pub const StandardD: Male = Male::StandardD;
         }
     }
 }

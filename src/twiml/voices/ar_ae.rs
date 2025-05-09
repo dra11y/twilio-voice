@@ -14,6 +14,7 @@ pub mod neural {
         #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Polly.Zayd-Neural")]
+            #[strum(to_string = "Polly.Zayd-Neural")]
             ZaydNeural,
         }
 
@@ -41,6 +42,7 @@ pub mod neural {
         #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Polly.Hala-Neural")]
+            #[strum(to_string = "Polly.Hala-Neural")]
             HalaNeural,
         }
 
@@ -64,7 +66,7 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
             Male(Male),
@@ -87,7 +89,7 @@ pub mod neural {
         }
     }
 
-    #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
     #[serde(untagged)]
     pub enum Voice {
         Polly(polly::Voice),
@@ -108,7 +110,7 @@ pub mod neural {
     }
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Voice {
     Neural(neural::Voice),
@@ -125,24 +127,6 @@ impl VoiceGender for Voice {
     fn gender(&self) -> Gender {
         match self {
             Voice::Neural(voice) => voice.gender(),
-        }
-    }
-}
-
-pub mod female {
-    pub mod neural {
-        pub mod polly {
-            use super::super::super::neural::polly::*;
-            pub const HalaNeural: Female = Female::HalaNeural;
-        }
-    }
-}
-
-pub mod male {
-    pub mod neural {
-        pub mod polly {
-            use super::super::super::neural::polly::*;
-            pub const ZaydNeural: Male = Male::ZaydNeural;
         }
     }
 }

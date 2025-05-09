@@ -1,13 +1,13 @@
-// Auto-generated at: 2025-05-06 23:11
+// Auto-generated at: 2025-05-07 20:08
 // Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
 
-/// Current price of Standard voices per 100 chars as of 2025-05-06 23:11 UTC
-pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
-/// Current price of Neural voices per 100 chars as of 2025-05-06 23:11 UTC
-pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
-/// Current price of Generative voices per 100 chars as of 2025-05-06 23:11 UTC
+/// Current price of Generative voices per 100 chars as of 2025-05-07 20:08 UTC
 pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
+/// Current price of Standard voices per 100 chars as of 2025-05-07 20:08 UTC
+pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
+/// Current price of Neural voices per 100 chars as of 2025-05-07 20:08 UTC
+pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
 
 #[cfg(feature = "af-za")]
 pub mod af_za;
@@ -151,6 +151,7 @@ pub trait VoicePrice {
 
 #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
+#[strum(serialize_all = "kebab-case")]
 #[serde(rename = "kebab-case")]
 pub enum Gender {
     Female,
@@ -168,344 +169,475 @@ pub trait VoiceGender {
 #[non_exhaustive]
 pub enum Language {
     #[cfg(feature = "af-za")]
+    #[strum(to_string = "af-ZA")]
     #[serde(rename = "af-ZA")]
     AfZa,
     #[cfg(feature = "ar-ae")]
+    #[strum(to_string = "ar-AE")]
     #[serde(rename = "ar-AE")]
     ArAe,
     #[cfg(feature = "ar-xa")]
+    #[strum(to_string = "ar-XA")]
     #[serde(rename = "ar-XA")]
     ArXa,
     #[cfg(feature = "arb")]
+    #[strum(to_string = "arb")]
     #[serde(rename = "arb")]
     Arb,
     #[cfg(feature = "bg-bg")]
+    #[strum(to_string = "bg-BG")]
     #[serde(rename = "bg-BG")]
     BgBg,
     #[cfg(feature = "bn-in")]
+    #[strum(to_string = "bn-IN")]
     #[serde(rename = "bn-IN")]
     BnIn,
     #[cfg(feature = "ca-es")]
+    #[strum(to_string = "ca-ES")]
     #[serde(rename = "ca-ES")]
     CaEs,
     #[cfg(feature = "cmn-cn")]
+    #[strum(to_string = "cmn-CN")]
     #[serde(rename = "cmn-CN")]
     CmnCn,
     #[cfg(feature = "cmn-tw")]
+    #[strum(to_string = "cmn-TW")]
     #[serde(rename = "cmn-TW")]
     CmnTw,
     #[cfg(feature = "cs-cz")]
+    #[strum(to_string = "cs-CZ")]
     #[serde(rename = "cs-CZ")]
     CsCz,
     #[cfg(feature = "cy-gb")]
+    #[strum(to_string = "cy-GB")]
     #[serde(rename = "cy-GB")]
     CyGb,
     #[cfg(feature = "da-dk")]
+    #[strum(to_string = "da-DK")]
     #[serde(rename = "da-DK")]
     DaDk,
     #[cfg(feature = "de-at")]
+    #[strum(to_string = "de-AT")]
     #[serde(rename = "de-AT")]
     DeAt,
     #[cfg(feature = "de-de")]
+    #[strum(to_string = "de-DE")]
     #[serde(rename = "de-DE")]
     DeDe,
     #[cfg(feature = "el-gr")]
+    #[strum(to_string = "el-GR")]
     #[serde(rename = "el-GR")]
     ElGr,
     #[cfg(feature = "en-au")]
+    #[strum(to_string = "en-AU")]
     #[serde(rename = "en-AU")]
     EnAu,
     #[cfg(feature = "en-gb")]
+    #[strum(to_string = "en-GB")]
     #[serde(rename = "en-GB")]
     EnGb,
     #[cfg(feature = "en-gb-wls")]
+    #[strum(to_string = "en-GB-WLS")]
     #[serde(rename = "en-GB-WLS")]
     EnGbWls,
     #[cfg(feature = "en-ie")]
+    #[strum(to_string = "en-IE")]
     #[serde(rename = "en-IE")]
     EnIe,
     #[cfg(feature = "en-in")]
+    #[strum(to_string = "en-IN")]
     #[serde(rename = "en-IN")]
     EnIn,
     #[cfg(feature = "en-nz")]
+    #[strum(to_string = "en-NZ")]
     #[serde(rename = "en-NZ")]
     EnNz,
     #[cfg(feature = "en-us")]
+    #[strum(to_string = "en-US")]
     #[serde(rename = "en-US")]
     EnUs,
     #[cfg(feature = "en-za")]
+    #[strum(to_string = "en-ZA")]
     #[serde(rename = "en-ZA")]
     EnZa,
     #[cfg(feature = "es-es")]
+    #[strum(to_string = "es-ES")]
     #[serde(rename = "es-ES")]
     EsEs,
     #[cfg(feature = "es-mx")]
+    #[strum(to_string = "es-MX")]
     #[serde(rename = "es-MX")]
     EsMx,
     #[cfg(feature = "es-us")]
+    #[strum(to_string = "es-US")]
     #[serde(rename = "es-US")]
     EsUs,
     #[cfg(feature = "eu-es")]
+    #[strum(to_string = "eu-ES")]
     #[serde(rename = "eu-ES")]
     EuEs,
     #[cfg(feature = "fi-fi")]
+    #[strum(to_string = "fi-FI")]
     #[serde(rename = "fi-FI")]
     FiFi,
     #[cfg(feature = "fil-ph")]
+    #[strum(to_string = "fil-PH")]
     #[serde(rename = "fil-PH")]
     FilPh,
     #[cfg(feature = "fr-be")]
+    #[strum(to_string = "fr-BE")]
     #[serde(rename = "fr-BE")]
     FrBe,
     #[cfg(feature = "fr-ca")]
+    #[strum(to_string = "fr-CA")]
     #[serde(rename = "fr-CA")]
     FrCa,
     #[cfg(feature = "fr-fr")]
+    #[strum(to_string = "fr-FR")]
     #[serde(rename = "fr-FR")]
     FrFr,
     #[cfg(feature = "gl-es")]
+    #[strum(to_string = "gl-ES")]
     #[serde(rename = "gl-ES")]
     GlEs,
     #[cfg(feature = "gu-in")]
+    #[strum(to_string = "gu-IN")]
     #[serde(rename = "gu-IN")]
     GuIn,
     #[cfg(feature = "he-il")]
+    #[strum(to_string = "he-IL")]
     #[serde(rename = "he-IL")]
     HeIl,
     #[cfg(feature = "hi-in")]
+    #[strum(to_string = "hi-IN")]
     #[serde(rename = "hi-IN")]
     HiIn,
     #[cfg(feature = "hu-hu")]
+    #[strum(to_string = "hu-HU")]
     #[serde(rename = "hu-HU")]
     HuHu,
     #[cfg(feature = "id-id")]
+    #[strum(to_string = "id-ID")]
     #[serde(rename = "id-ID")]
     IdId,
     #[cfg(feature = "is-is")]
+    #[strum(to_string = "is-IS")]
     #[serde(rename = "is-IS")]
     IsIs,
     #[cfg(feature = "it-it")]
+    #[strum(to_string = "it-IT")]
     #[serde(rename = "it-IT")]
     ItIt,
     #[cfg(feature = "ja-jp")]
+    #[strum(to_string = "ja-JP")]
     #[serde(rename = "ja-JP")]
     JaJp,
     #[cfg(feature = "kn-in")]
+    #[strum(to_string = "kn-IN")]
     #[serde(rename = "kn-IN")]
     KnIn,
     #[cfg(feature = "ko-kr")]
+    #[strum(to_string = "ko-KR")]
     #[serde(rename = "ko-KR")]
     KoKr,
     #[cfg(feature = "lt-lt")]
+    #[strum(to_string = "lt-LT")]
     #[serde(rename = "lt-LT")]
     LtLt,
     #[cfg(feature = "lv-lv")]
+    #[strum(to_string = "lv-LV")]
     #[serde(rename = "lv-LV")]
     LvLv,
     #[cfg(feature = "ml-in")]
+    #[strum(to_string = "ml-IN")]
     #[serde(rename = "ml-IN")]
     MlIn,
     #[cfg(feature = "mr-in")]
+    #[strum(to_string = "mr-IN")]
     #[serde(rename = "mr-IN")]
     MrIn,
     #[cfg(feature = "ms-my")]
+    #[strum(to_string = "ms-MY")]
     #[serde(rename = "ms-MY")]
     MsMy,
     #[cfg(feature = "nb-no")]
+    #[strum(to_string = "nb-NO")]
     #[serde(rename = "nb-NO")]
     NbNo,
     #[cfg(feature = "nl-be")]
+    #[strum(to_string = "nl-BE")]
     #[serde(rename = "nl-BE")]
     NlBe,
     #[cfg(feature = "nl-nl")]
+    #[strum(to_string = "nl-NL")]
     #[serde(rename = "nl-NL")]
     NlNl,
     #[cfg(feature = "pa-in")]
+    #[strum(to_string = "pa-IN")]
     #[serde(rename = "pa-IN")]
     PaIn,
     #[cfg(feature = "pl-pl")]
+    #[strum(to_string = "pl-PL")]
     #[serde(rename = "pl-PL")]
     PlPl,
     #[cfg(feature = "pt-br")]
+    #[strum(to_string = "pt-BR")]
     #[serde(rename = "pt-BR")]
     PtBr,
     #[cfg(feature = "pt-pt")]
+    #[strum(to_string = "pt-PT")]
     #[serde(rename = "pt-PT")]
     PtPt,
     #[cfg(feature = "ro-ro")]
+    #[strum(to_string = "ro-RO")]
     #[serde(rename = "ro-RO")]
     RoRo,
     #[cfg(feature = "ru-ru")]
+    #[strum(to_string = "ru-RU")]
     #[serde(rename = "ru-RU")]
     RuRu,
     #[cfg(feature = "sk-sk")]
+    #[strum(to_string = "sk-SK")]
     #[serde(rename = "sk-SK")]
     SkSk,
     #[cfg(feature = "sv-se")]
+    #[strum(to_string = "sv-SE")]
     #[serde(rename = "sv-SE")]
     SvSe,
     #[cfg(feature = "ta-in")]
+    #[strum(to_string = "ta-IN")]
     #[serde(rename = "ta-IN")]
     TaIn,
     #[cfg(feature = "te-in")]
+    #[strum(to_string = "te-IN")]
     #[serde(rename = "te-IN")]
     TeIn,
     #[cfg(feature = "th-th")]
+    #[strum(to_string = "th-TH")]
     #[serde(rename = "th-TH")]
     ThTh,
     #[cfg(feature = "tr-tr")]
+    #[strum(to_string = "tr-TR")]
     #[serde(rename = "tr-TR")]
     TrTr,
     #[cfg(feature = "vi-vn")]
+    #[strum(to_string = "vi-VN")]
     #[serde(rename = "vi-VN")]
     ViVn,
     #[cfg(feature = "yue-cn")]
+    #[strum(to_string = "yue-CN")]
     #[serde(rename = "yue-CN")]
     YueCn,
     #[cfg(feature = "yue-hk")]
+    #[strum(to_string = "yue-HK")]
     #[serde(rename = "yue-HK")]
     YueHk,
 }
 
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Voice {
-    #[serde(rename = "man")]
+    #[serde(alias = "man")]
     Man,
-    #[serde(rename = "woman")]
+    #[serde(alias = "woman")]
     Woman,
     #[cfg(feature = "af-za")]
+    #[serde(untagged)]
     AfZa(af_za::Voice),
     #[cfg(feature = "ar-ae")]
+    #[serde(untagged)]
     ArAe(ar_ae::Voice),
     #[cfg(feature = "ar-xa")]
+    #[serde(untagged)]
     ArXa(ar_xa::Voice),
     #[cfg(feature = "arb")]
+    #[serde(untagged)]
     Arb(arb::Voice),
     #[cfg(feature = "bg-bg")]
+    #[serde(untagged)]
     BgBg(bg_bg::Voice),
     #[cfg(feature = "bn-in")]
+    #[serde(untagged)]
     BnIn(bn_in::Voice),
     #[cfg(feature = "ca-es")]
+    #[serde(untagged)]
     CaEs(ca_es::Voice),
     #[cfg(feature = "cmn-cn")]
+    #[serde(untagged)]
     CmnCn(cmn_cn::Voice),
     #[cfg(feature = "cmn-tw")]
+    #[serde(untagged)]
     CmnTw(cmn_tw::Voice),
     #[cfg(feature = "cs-cz")]
+    #[serde(untagged)]
     CsCz(cs_cz::Voice),
     #[cfg(feature = "cy-gb")]
+    #[serde(untagged)]
     CyGb(cy_gb::Voice),
     #[cfg(feature = "da-dk")]
+    #[serde(untagged)]
     DaDk(da_dk::Voice),
     #[cfg(feature = "de-at")]
+    #[serde(untagged)]
     DeAt(de_at::Voice),
     #[cfg(feature = "de-de")]
+    #[serde(untagged)]
     DeDe(de_de::Voice),
     #[cfg(feature = "el-gr")]
+    #[serde(untagged)]
     ElGr(el_gr::Voice),
     #[cfg(feature = "en-au")]
+    #[serde(untagged)]
     EnAu(en_au::Voice),
     #[cfg(feature = "en-gb")]
+    #[serde(untagged)]
     EnGb(en_gb::Voice),
     #[cfg(feature = "en-gb-wls")]
+    #[serde(untagged)]
     EnGbWls(en_gb_wls::Voice),
     #[cfg(feature = "en-ie")]
+    #[serde(untagged)]
     EnIe(en_ie::Voice),
     #[cfg(feature = "en-in")]
+    #[serde(untagged)]
     EnIn(en_in::Voice),
     #[cfg(feature = "en-nz")]
+    #[serde(untagged)]
     EnNz(en_nz::Voice),
     #[cfg(feature = "en-us")]
+    #[serde(untagged)]
     EnUs(en_us::Voice),
     #[cfg(feature = "en-za")]
+    #[serde(untagged)]
     EnZa(en_za::Voice),
     #[cfg(feature = "es-es")]
+    #[serde(untagged)]
     EsEs(es_es::Voice),
     #[cfg(feature = "es-mx")]
+    #[serde(untagged)]
     EsMx(es_mx::Voice),
     #[cfg(feature = "es-us")]
+    #[serde(untagged)]
     EsUs(es_us::Voice),
     #[cfg(feature = "eu-es")]
+    #[serde(untagged)]
     EuEs(eu_es::Voice),
     #[cfg(feature = "fi-fi")]
+    #[serde(untagged)]
     FiFi(fi_fi::Voice),
     #[cfg(feature = "fil-ph")]
+    #[serde(untagged)]
     FilPh(fil_ph::Voice),
     #[cfg(feature = "fr-be")]
+    #[serde(untagged)]
     FrBe(fr_be::Voice),
     #[cfg(feature = "fr-ca")]
+    #[serde(untagged)]
     FrCa(fr_ca::Voice),
     #[cfg(feature = "fr-fr")]
+    #[serde(untagged)]
     FrFr(fr_fr::Voice),
     #[cfg(feature = "gl-es")]
+    #[serde(untagged)]
     GlEs(gl_es::Voice),
     #[cfg(feature = "gu-in")]
+    #[serde(untagged)]
     GuIn(gu_in::Voice),
     #[cfg(feature = "he-il")]
+    #[serde(untagged)]
     HeIl(he_il::Voice),
     #[cfg(feature = "hi-in")]
+    #[serde(untagged)]
     HiIn(hi_in::Voice),
     #[cfg(feature = "hu-hu")]
+    #[serde(untagged)]
     HuHu(hu_hu::Voice),
     #[cfg(feature = "id-id")]
+    #[serde(untagged)]
     IdId(id_id::Voice),
     #[cfg(feature = "is-is")]
+    #[serde(untagged)]
     IsIs(is_is::Voice),
     #[cfg(feature = "it-it")]
+    #[serde(untagged)]
     ItIt(it_it::Voice),
     #[cfg(feature = "ja-jp")]
+    #[serde(untagged)]
     JaJp(ja_jp::Voice),
     #[cfg(feature = "kn-in")]
+    #[serde(untagged)]
     KnIn(kn_in::Voice),
     #[cfg(feature = "ko-kr")]
+    #[serde(untagged)]
     KoKr(ko_kr::Voice),
     #[cfg(feature = "lt-lt")]
+    #[serde(untagged)]
     LtLt(lt_lt::Voice),
     #[cfg(feature = "lv-lv")]
+    #[serde(untagged)]
     LvLv(lv_lv::Voice),
     #[cfg(feature = "ml-in")]
+    #[serde(untagged)]
     MlIn(ml_in::Voice),
     #[cfg(feature = "mr-in")]
+    #[serde(untagged)]
     MrIn(mr_in::Voice),
     #[cfg(feature = "ms-my")]
+    #[serde(untagged)]
     MsMy(ms_my::Voice),
     #[cfg(feature = "nb-no")]
+    #[serde(untagged)]
     NbNo(nb_no::Voice),
     #[cfg(feature = "nl-be")]
+    #[serde(untagged)]
     NlBe(nl_be::Voice),
     #[cfg(feature = "nl-nl")]
+    #[serde(untagged)]
     NlNl(nl_nl::Voice),
     #[cfg(feature = "pa-in")]
+    #[serde(untagged)]
     PaIn(pa_in::Voice),
     #[cfg(feature = "pl-pl")]
+    #[serde(untagged)]
     PlPl(pl_pl::Voice),
     #[cfg(feature = "pt-br")]
+    #[serde(untagged)]
     PtBr(pt_br::Voice),
     #[cfg(feature = "pt-pt")]
+    #[serde(untagged)]
     PtPt(pt_pt::Voice),
     #[cfg(feature = "ro-ro")]
+    #[serde(untagged)]
     RoRo(ro_ro::Voice),
     #[cfg(feature = "ru-ru")]
+    #[serde(untagged)]
     RuRu(ru_ru::Voice),
     #[cfg(feature = "sk-sk")]
+    #[serde(untagged)]
     SkSk(sk_sk::Voice),
     #[cfg(feature = "sv-se")]
+    #[serde(untagged)]
     SvSe(sv_se::Voice),
     #[cfg(feature = "ta-in")]
+    #[serde(untagged)]
     TaIn(ta_in::Voice),
     #[cfg(feature = "te-in")]
+    #[serde(untagged)]
     TeIn(te_in::Voice),
     #[cfg(feature = "th-th")]
+    #[serde(untagged)]
     ThTh(th_th::Voice),
     #[cfg(feature = "tr-tr")]
+    #[serde(untagged)]
     TrTr(tr_tr::Voice),
     #[cfg(feature = "vi-vn")]
+    #[serde(untagged)]
     ViVn(vi_vn::Voice),
     #[cfg(feature = "yue-cn")]
+    #[serde(untagged)]
     YueCn(yue_cn::Voice),
     #[cfg(feature = "yue-hk")]
+    #[serde(untagged)]
     YueHk(yue_hk::Voice),
 }
 
