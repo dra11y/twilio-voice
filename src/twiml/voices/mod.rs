@@ -1,13 +1,13 @@
-// Auto-generated at: 2025-05-07 20:08
+// Auto-generated at: 2025-05-10 21:09
 // Source: https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 #![allow(non_local_definitions)]
 
-/// Current price of Generative voices per 100 chars as of 2025-05-07 20:08 UTC
-pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
-/// Current price of Standard voices per 100 chars as of 2025-05-07 20:08 UTC
-pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
-/// Current price of Neural voices per 100 chars as of 2025-05-07 20:08 UTC
+/// Current price of Neural voices per 100 chars as of 2025-05-10 21:09 UTC
 pub const NEURAL_VOICE_PRICE: f32 = 0.0032;
+/// Current price of Standard voices per 100 chars as of 2025-05-10 21:09 UTC
+pub const STANDARD_VOICE_PRICE: f32 = 0.0008;
+/// Current price of Generative voices per 100 chars as of 2025-05-10 21:09 UTC
+pub const GENERATIVE_VOICE_PRICE: f32 = 0.013;
 
 #[cfg(feature = "af-za")]
 pub mod af_za;
@@ -639,6 +639,22 @@ pub enum Voice {
     #[cfg(feature = "yue-hk")]
     #[serde(untagged)]
     YueHk(yue_hk::Voice),
+}
+
+impl std::str::FromStr for Voice {
+    type Err = serde_plain::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_plain::from_str(s)
+    }
+}
+
+impl std::fmt::Display for Voice {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        serde_plain::to_string(self)
+            .map_err(|_| std::fmt::Error)
+            .and_then(|s| write!(f, "{s}"))
+    }
 }
 
 impl VoicePrice for Voice {

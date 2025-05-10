@@ -28,4 +28,8 @@ pub enum DigitsError {
     NumericAfterNonNumeric,
     #[error("u64 overflow")]
     Overflow,
+    #[error("invalid character: {0}")]
+    InvalidCharacter(char),
+    #[error("negative number: {0}")]
+    NegativeNumber(i128),
 }

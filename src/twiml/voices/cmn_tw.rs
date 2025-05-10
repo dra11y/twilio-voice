@@ -15,6 +15,34 @@ pub mod neural {
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.cmn-TW-Wavenet-A")]
+            #[strum(to_string = "Google.cmn-TW-Wavenet-A")]
+            WavenetA,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> Option<f32> {
+                Some(NEURAL_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::CmnTw(super::super::Voice::Neural(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.cmn-TW-Wavenet-B")]
             #[strum(to_string = "Google.cmn-TW-Wavenet-B")]
@@ -44,39 +72,11 @@ pub mod neural {
             }
         }
 
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.cmn-TW-Wavenet-A")]
-            #[strum(to_string = "Google.cmn-TW-Wavenet-A")]
-            WavenetA,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> Option<f32> {
-                Some(NEURAL_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Female {
-            fn gender(&self) -> Gender {
-                Gender::Female
-            }
-        }
-
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::CmnTw(super::super::Voice::Neural(super::Voice::Google(
-                    Voice::Female(value),
-                )))
-            }
-        }
-
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Male(Male),
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {
@@ -88,8 +88,8 @@ pub mod neural {
         impl VoiceGender for Voice {
             fn gender(&self) -> Gender {
                 match self {
-                    Voice::Male(_) => Gender::Male,
                     Voice::Female(_) => Gender::Female,
+                    Voice::Male(_) => Gender::Male,
                 }
             }
         }

@@ -12,37 +12,6 @@ pub mod standard {
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Male {
-            #[serde(rename = "Google.yue-HK-Standard-B")]
-            #[strum(to_string = "Google.yue-HK-Standard-B")]
-            StandardB,
-            #[serde(rename = "Google.yue-HK-Standard-D")]
-            #[strum(to_string = "Google.yue-HK-Standard-D")]
-            StandardD,
-        }
-
-        impl VoicePrice for Male {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Male {
-            fn gender(&self) -> Gender {
-                Gender::Male
-            }
-        }
-
-        impl From<Male> for crate::twiml::Voice {
-            fn from(value: Male) -> Self {
-                Self::YueHk(super::super::Voice::Standard(super::Voice::Google(
-                    Voice::Male(value),
-                )))
-            }
-        }
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
         pub enum Female {
             #[serde(rename = "Google.yue-HK-Standard-A")]
             #[strum(to_string = "Google.yue-HK-Standard-A")]
@@ -72,11 +41,42 @@ pub mod standard {
             }
         }
 
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Male {
+            #[serde(rename = "Google.yue-HK-Standard-B")]
+            #[strum(to_string = "Google.yue-HK-Standard-B")]
+            StandardB,
+            #[serde(rename = "Google.yue-HK-Standard-D")]
+            #[strum(to_string = "Google.yue-HK-Standard-D")]
+            StandardD,
+        }
+
+        impl VoicePrice for Male {
+            fn price(&self) -> Option<f32> {
+                Some(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Male {
+            fn gender(&self) -> Gender {
+                Gender::Male
+            }
+        }
+
+        impl From<Male> for crate::twiml::Voice {
+            fn from(value: Male) -> Self {
+                Self::YueHk(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Male(value),
+                )))
+            }
+        }
+
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Male(Male),
             Female(Female),
+            Male(Male),
         }
 
         impl VoicePrice for Voice {
@@ -88,8 +88,8 @@ pub mod standard {
         impl VoiceGender for Voice {
             fn gender(&self) -> Gender {
                 match self {
-                    Voice::Male(_) => Gender::Male,
                     Voice::Female(_) => Gender::Female,
+                    Voice::Male(_) => Gender::Male,
                 }
             }
         }

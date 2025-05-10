@@ -28,17 +28,9 @@ impl Deref for Digits {
 }
 
 impl Digits {
-    // pub fn iter(&self) -> std::slice::Iter<'_, Digit> {
-    //     self.0.iter()
-    // }
-
-    // pub fn len(&self) -> usize {
-    //     self.0.len()
-    // }
-
-    // pub fn is_empty(&self) -> bool {
-    //     self.0.is_empty()
-    // }
+    pub fn words(&self) -> Vec<String> {
+        self.0.iter().map(Digit::word).collect()
+    }
 
     /// Return the integer value of the leading numeric digits if all non-numeric digits appear after all numeric digits; otherwise return None.
     pub fn to_int(&self) -> Result<u64> {
@@ -151,6 +143,28 @@ pub enum Digit {
 }
 
 impl Digit {
+    /// TODO: Translations
+    /// The (for now, English) word for the digit.
+    pub fn word(&self) -> String {
+        match self {
+            Digit::Zero => "zero".to_string(),
+            Digit::One => "one".to_string(),
+            Digit::Two => "two".to_string(),
+            Digit::Three => "three".to_string(),
+            Digit::Four => "four".to_string(),
+            Digit::Five => "five".to_string(),
+            Digit::Six => "six".to_string(),
+            Digit::Seven => "seven".to_string(),
+            Digit::Eight => "eight".to_string(),
+            Digit::Nine => "nine".to_string(),
+            Digit::Star => "star".to_string(),
+            Digit::Pound => "pound".to_string(),
+            Digit::W => "".to_string(),
+            Digit::WW => "".to_string(),
+            _ => self.as_ref().to_string(),
+        }
+    }
+
     pub fn is_alpha(&self) -> bool {
         matches!(self, Digit::A | Digit::B | Digit::C | Digit::D)
     }
@@ -177,7 +191,7 @@ impl Digit {
 }
 
 impl TryFrom<char> for Digit {
-    type Error = ();
+    type Error = DigitsError;
 
     fn try_from(c: char) -> std::result::Result<Self, Self::Error> {
         match c {
@@ -199,7 +213,7 @@ impl TryFrom<char> for Digit {
             'D' => Ok(Digit::D),
             'w' => Ok(Digit::W),
             'W' => Ok(Digit::WW),
-            _ => Err(()),
+            _ => Err(DigitsError::InvalidCharacter(c)),
         }
     }
 }
@@ -240,10 +254,93 @@ impl fmt::Display for Digits {
     }
 }
 
+impl TryFrom<String> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
+        Digits::from_str(value.as_str())
+    }
+}
+
+impl From<u8> for Digits {
+    fn from(value: u8) -> Self {
+        Digits::from(value as u128)
+    }
+}
+
+impl From<u16> for Digits {
+    fn from(value: u16) -> Self {
+        Digits::from(value as u128)
+    }
+}
+
+impl From<u32> for Digits {
+    fn from(value: u32) -> Self {
+        Digits::from(value as u128)
+    }
+}
+
+impl From<u64> for Digits {
+    fn from(value: u64) -> Self {
+        Digits::from(value as u128)
+    }
+}
+
+impl From<u128> for Digits {
+    fn from(value: u128) -> Self {
+        Digits::from_str(&value.to_string()).unwrap()
+    }
+}
+
+impl TryFrom<i8> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: i8) -> std::result::Result<Self, Self::Error> {
+        Digits::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i16> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: i16) -> std::result::Result<Self, Self::Error> {
+        Digits::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i32> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        Digits::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i64> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: i64) -> std::result::Result<Self, Self::Error> {
+        Digits::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i128> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: i128) -> std::result::Result<Self, Self::Error> {
+        if value < 0 {
+            return Err(DigitsError::NegativeNumber(value));
+        }
+        let s = value.to_string();
+        Digits::from_str(s.as_str())
+    }
+}
+
 impl FromStr for Digits {
-    type Err = ();
+    type Err = DigitsError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let s = s.trim();
         let mut digits = Vec::with_capacity(s.len());
         for c in s.chars() {
             digits.push(Digit::try_from(c)?);

@@ -637,6 +637,34 @@ fn generate_main_file(
     }
     writeln!(main_file, "}}\n")?;
 
+    // Implement FromStr for Voice:
+    writeln!(
+        main_file,
+        r#"
+        impl std::str::FromStr for Voice {{
+            type Err = serde_plain::Error;
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {{
+                serde_plain::from_str(s)
+            }}
+        }}
+    "#
+    )?;
+
+    // Implement Display for Voice:
+    writeln!(
+        main_file,
+        r#"
+        impl std::fmt::Display for Voice {{
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {{
+                serde_plain::to_string(self)
+                    .map_err(|_| std::fmt::Error)
+                    .and_then(|s| write!(f, "{{s}}"))
+            }}
+        }}
+    "#
+    )?;
+
     // Implement the VoicePrice trait for the Voice enum
     let mut price_arms = Vec::new();
     let mut gender_arms = Vec::new();

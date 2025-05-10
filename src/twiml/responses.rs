@@ -120,8 +120,10 @@ pub struct Pause {
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use crate::twiml::{
-        GatherBuilderVerbs, GatherDigit, GatherVerb, InputType, Language, SpeechModel,
+        self, GatherBuilderVerbs, GatherDigit, GatherVerb, InputType, Language, SpeechModel,
         SpeechTimeout,
         voices::{self, GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
     };
@@ -172,6 +174,24 @@ mod tests {
             xml,
             r#"<Response><Say language="en-US" voice="Google.en-US-Chirp3-HD-Charon" loop="1">Hello</Say></Response>"#
         );
+    }
+
+    #[test]
+    fn test_voice_strings() {
+        let voice_id = "Polly.Joanna-Neural";
+        let voice = twiml::Voice::from_str(voice_id).unwrap();
+        assert_eq!(
+            voice,
+            voices::en_us::neural::polly::Female::JoannaNeural.into()
+        );
+        let voice_id = "Google.en-US-Neural2-D";
+        let voice = twiml::Voice::from_str(voice_id).unwrap();
+        assert_eq!(voice, voices::en_us::neural::google::Male::Neural2D.into());
+        assert_eq!(voice.to_string(), voice_id);
+
+        // test invalid id
+        let voice_err = twiml::Voice::from_str("invalid-voice-id");
+        assert!(voice_err.is_err());
     }
 
     #[test]
