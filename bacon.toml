@@ -1,0 +1,14 @@
+[jobs.test]
+command = [
+    "cargo",
+    "test",
+    "--all-features",
+    "--",
+    "--exact",
+    "twiml::responses::tests::test_say_with_ssml",
+]
+need_stdout = true
+env = { RUST_LOG = "debug", RUST_BACKTRACE = "1" }
+background = false
+on_change_strategy = "kill_then_restart"
+kill = ["kill", "-s", "INT"]
