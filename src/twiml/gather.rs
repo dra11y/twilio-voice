@@ -287,7 +287,7 @@ pub struct Gather {
     ///
     /// Documentation: https://www.twilio.com/docs/voice/twiml/gather#nest-other-verbs
     #[builder(default)]
-    #[serde(default, rename = "$value")]
+    #[serde(rename = "#content")]
     pub verbs: Vec<GatherVerb>,
 }
 

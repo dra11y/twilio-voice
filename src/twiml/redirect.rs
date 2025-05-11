@@ -7,7 +7,7 @@ use super::Method;
 /// https://www.twilio.com/docs/voice/twiml/redirect
 #[derive(Debug, Clone, TypedBuilder, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Redirect {
-    #[serde(rename = "$value")]
+    #[serde(rename = "$text")]
     pub url: String,
     #[serde(rename = "@method")]
     #[builder(default)]
