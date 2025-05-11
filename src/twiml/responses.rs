@@ -197,7 +197,7 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text("Hello, World! You’re #1!".into())
+                    .ssml("Hello, World! You’re #1!".into())
                     .voice(voices::Voice::Woman)
                     .build(),
             )
@@ -216,7 +216,7 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text("Hello".into())
+                    .ssml("Hello".into())
                     .voice(voices::en_us::generative::google::Male::Chirp3HdCharon.into())
                     .build(),
             )
@@ -233,7 +233,7 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text("Hello".into())
+                    .ssml("Hello".into())
                     .language(Language::EnUs)
                     .voice(voices::en_us::generative::google::Male::Chirp3HdCharon.into())
                     .build(),
@@ -255,7 +255,7 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text(ssml.into())
+                    .ssml(ssml.into())
                     .voice(voices::Voice::Woman)
                     .build(),
             )
@@ -276,7 +276,7 @@ mod tests {
         let ssml = r#"<speak>Hello <emphasis>world</emphasis> &amp; goodbye!</speak>"#;
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(ssml.into()).voice(Voice::Woman).build(),
+                Say::builder().ssml(ssml.into()).voice(Voice::Woman).build(),
             )])
             .build();
 
@@ -293,7 +293,7 @@ mod tests {
         let ssml = r#"<![CDATA[<message>Hello & Welcome!</message>]]>"#;
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(ssml.into()).build(),
+                Say::builder().ssml(ssml.into()).build(),
             )])
             .build();
 
@@ -316,7 +316,7 @@ mod tests {
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
                 Say::builder()
-                    .text(ssml.into())
+                    .ssml(ssml.into())
                     .language(Language::EnUs)
                     .build(),
             )])
@@ -337,13 +337,13 @@ mod tests {
             .verbs(vec![
                 ResponseVerb::Say(
                     Say::builder()
-                        .text("First message".into())
+                        .ssml("First message".into())
                         .voice(Voice::Woman)
                         .build(),
                 ),
                 ResponseVerb::Say(
                     Say::builder()
-                        .text("<speak>Second message</speak>".into())
+                        .ssml("<speak>Second message</speak>".into())
                         .loop_count(3)
                         .build(),
                 ),
@@ -363,7 +363,7 @@ mod tests {
         let ssml = r#"1 < 2 &amp; 3 > 0"#;
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(ssml.into()).build(),
+                Say::builder().ssml(ssml.into()).build(),
             )])
             .build();
 
@@ -393,7 +393,7 @@ mod tests {
 
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(ssml.into()).build(),
+                Say::builder().ssml(ssml.into()).build(),
             )])
             .build();
 
@@ -416,7 +416,7 @@ mod tests {
         .trim();
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(ssml.into()).build(),
+                Say::builder().ssml(ssml.into()).build(),
             )])
             .build();
 
@@ -432,7 +432,7 @@ mod tests {
     fn test_empty_ssml() {
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text("".into()).build(),
+                Say::builder().ssml("".into()).build(),
             )])
             .build();
 
@@ -444,7 +444,7 @@ mod tests {
 
         let resp = Response::builder()
             .verbs(vec![ResponseVerb::Say(
-                Say::builder().text(" a".into()).build(),
+                Say::builder().ssml(" a".into()).build(),
             )])
             .build();
 
@@ -505,7 +505,7 @@ mod tests {
     #[test]
     fn test_gather() {
         let say = Say::builder()
-            .text("Press 1 for sales, 2 for support.".into())
+            .ssml("Press 1 for sales, 2 for support.".into())
             .voice(voices::en_us::neural::google::Female::Neural2C.into())
             .build();
         let resp = Response::builder()
@@ -569,14 +569,14 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text(welcome_text.into())
+                    .ssml(welcome_text.into())
                     .voice(voices::en_us::standard::polly::Female::Joanna.into())
                     .build(),
             )
             .pause(Pause::builder().length(3).build())
             .say(
                 Say::builder()
-                    .text(selection_text.into())
+                    .ssml(selection_text.into())
                     .language(Language::EnUs)
                     .voice(voices::en_us::standard::polly::Female::Joanna.into())
                     .build(),
@@ -604,7 +604,7 @@ mod tests {
             .timeout(15)
             .say(
                 Say::builder()
-                    .text("Please enter your account number.".into())
+                    .ssml("Please enter your account number.".into())
                     .voice(voices::en_us::standard::polly::Male::Matthew.into())
                     .build(),
             )
@@ -626,13 +626,13 @@ mod tests {
             .timeout(20)
             .say(
                 Say::builder()
-                    .text(account_text.into())
+                    .ssml(account_text.into())
                     .voice(voices::en_us::neural::google::Male::Neural2D.into())
                     .build(),
             )
             .say(
                 Say::builder()
-                    .text(pound_text.into())
+                    .ssml(pound_text.into())
                     .voice(voices::en_us::neural::google::Male::Neural2D.into())
                     .build(),
             )
@@ -657,7 +657,7 @@ mod tests {
         let resp = Response::builder()
             .say(
                 Say::builder()
-                    .text("This message will repeat three times.".into())
+                    .ssml("This message will repeat three times.".into())
                     .voice(voices::en_us::neural::polly::Female::RuthNeural.into())
                     .loop_count(3)
                     .build(),
@@ -682,7 +682,7 @@ mod tests {
             .language(Language::EnUs)
             .say(
                 Say::builder()
-                    .text(speech_text.into())
+                    .ssml(speech_text.into())
                     .voice(voices::en_us::generative::google::Female::Chirp3HdAoede.into())
                     .build(),
             )
@@ -734,7 +734,7 @@ mod tests {
             .finish_on_key(GatherDigit::Pound)
             .say(
                 Say::builder()
-                    .text("Enter your pin followed by the pound key.".into())
+                    .ssml("Enter your pin followed by the pound key.".into())
                     .voice(voices::en_us::neural::polly::Male::JoeyNeural.into())
                     .build(),
             )
@@ -752,14 +752,14 @@ mod tests {
             .num_digits(1)
             .say(
                 Say::builder()
-                    .text("Welcome to Acme Corporation. Press 1 for sales, 2 for support, or 3 for billing.".into())
+                    .ssml("Welcome to Acme Corporation. Press 1 for sales, 2 for support, or 3 for billing.".into())
                     .voice(voices::en_us::neural::google::Female::Neural2F.into())
                     .build(),
             )
             .build();
 
         let fallback = Say::builder()
-            .text("We didn't receive any input. Please call back later.".into())
+            .ssml("We didn't receive any input. Please call back later.".into())
             .voice(voices::en_us::neural::google::Female::Neural2F.into())
             .build();
 

@@ -116,12 +116,12 @@ pub struct Say {
     #[builder(default = 1)]
     pub loop_count: u32,
     #[serde(default, rename = "#text")]
-    pub text: Ssml,
+    pub ssml: Ssml,
 }
 
 impl Say {
     pub fn text(&self) -> String {
-        self.text.text()
+        self.ssml.text()
     }
 }
 

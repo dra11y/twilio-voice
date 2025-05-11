@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Result, errors::DigitsError};
 
-#[derive(Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Digits(Vec<Digit>);
 
 impl fmt::Debug for Digits {
@@ -89,7 +89,18 @@ impl Digits {
 // https://www.twilio.com/docs/voice/twiml/say/text-speech#available-voices-and-languages
 
 #[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, strum::AsRefStr, strum::Display, Serialize, Deserialize,
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    PartialOrd,
+    Ord,
+    strum::AsRefStr,
+    strum::Display,
+    Serialize,
+    Deserialize,
 )]
 pub enum Digit {
     #[strum(serialize = "0")]
