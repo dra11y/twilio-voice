@@ -124,14 +124,14 @@ impl Say {
 }
 
 impl<A, B, C> SayBuilder<(A, B, C, ())> {
-    pub fn text(self, text: impl Into<String>) -> SayBuilder<(A, B, C, (Ssml,))> {
-        self.ssml(text.into().into())
+    pub fn text<S: AsRef<str>>(self, text: S) -> SayBuilder<(A, B, C, (Ssml,))> {
+        self.ssml(text.as_ref().into())
     }
 }
 
 impl<A, B, C> SayBuilder<(A, B, C, (Ssml,))> {
-    pub fn text(mut self, text: impl Into<String>) -> SayBuilder<(A, B, C, (Ssml,))> {
-        self.fields.3.0.push(Tag::Text(text.into()));
+    pub fn text<S: AsRef<str>>(mut self, text: S) -> SayBuilder<(A, B, C, (Ssml,))> {
+        self.fields.3.0.push(Tag::Text(text.as_ref().to_string()));
         self
     }
 }
