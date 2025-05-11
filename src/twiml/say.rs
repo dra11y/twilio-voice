@@ -46,15 +46,13 @@ impl<'de> Deserialize<'de> for Ssml {
     }
 }
 
-impl From<String> for Ssml {
-    fn from(value: String) -> Self {
-        Ssml::from(value.trim())
-    }
-}
-
-impl From<&str> for Ssml {
-    fn from(value: &str) -> Self {
-        Ssml::from_str(value.trim()).unwrap_or_default()
+impl<T> From<T> for Ssml
+where
+    T: Into<String>,
+{
+    fn from(value: T) -> Self {
+        let s: String = value.into();
+        Ssml::from_str(&s).unwrap_or_default()
     }
 }
 
@@ -122,6 +120,19 @@ pub struct Say {
 impl Say {
     pub fn text(&self) -> String {
         self.ssml.text()
+    }
+}
+
+impl<A, B, C> SayBuilder<(A, B, C, ())> {
+    pub fn text(self, text: impl Into<String>) -> SayBuilder<(A, B, C, (Ssml,))> {
+        self.ssml(text.into().into())
+    }
+}
+
+impl<A, B, C> SayBuilder<(A, B, C, (Ssml,))> {
+    pub fn text(mut self, text: impl Into<String>) -> SayBuilder<(A, B, C, (Ssml,))> {
+        self.fields.3.0.push(Tag::Text(text.into()));
+        self
     }
 }
 
