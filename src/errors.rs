@@ -12,6 +12,8 @@ pub enum Error {
     Url(#[from] url::ParseError),
     #[error("Digits: {0}")]
     Digits(#[from] DigitsError),
+    #[error("Response deserialization error: {0}, raw xml: {1}")]
+    ResponseDeser(String, String),
 }
 
 #[derive(Debug, thiserror::Error, Clone, Copy, PartialEq, Eq, Hash)]

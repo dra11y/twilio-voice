@@ -2,8 +2,10 @@ use std::{
     convert::Infallible,
     ops::{Deref, DerefMut},
     str::FromStr,
+    sync::LazyLock,
 };
 
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
@@ -66,13 +68,13 @@ impl FromStr for Ssml {
 
 impl Ssml {
     fn text(&self) -> String {
+        static TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"<[^>]*>"#).unwrap());
         #[allow(clippy::unnecessary_filter_map)]
         self.0
             .iter()
             .filter_map(|e| match e {
-                Tag::Text(text) => Some(text),
+                Tag::Text(text) => Some(TAG_REGEX.replace_all(text, " ")),
             })
-            .cloned()
             .collect::<Vec<_>>()
             .join("")
     }

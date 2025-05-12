@@ -273,6 +273,18 @@ impl TryFrom<String> for Digits {
     }
 }
 
+impl From<Digit> for Digits {
+    fn from(value: Digit) -> Self {
+        Digits(vec![value])
+    }
+}
+
+impl From<&Digit> for Digits {
+    fn from(value: &Digit) -> Self {
+        Digits(vec![*value])
+    }
+}
+
 impl From<u8> for Digits {
     fn from(value: u8) -> Self {
         Digits::from(value as u128)
@@ -383,7 +395,7 @@ impl Serialize for Digits {
     where
         S: serde::Serializer,
     {
-        self.0.serialize(serializer)
+        self.to_string().serialize(serializer)
     }
 }
 

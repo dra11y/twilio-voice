@@ -1,5 +1,7 @@
 use std::{fmt::Display, str::FromStr};
 
+use crate::errors::Error;
+
 use super::{Gather, Play, Redirect, Say, VoicePrice};
 use quick_xml::escape::{escape, unescape};
 use regex::{Captures, Regex};
@@ -30,17 +32,18 @@ pub struct Response {
 
 impl Display for Response {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let xml = serde_xml_rs::to_string(self).unwrap();
+        let xml = serde_xml_rs::to_string(self).map_err(|_| std::fmt::Error)?;
         write!(f, "{xml}")
     }
 }
 
 impl FromStr for Response {
-    type Err = serde_xml_rs::Error;
+    type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let escaped = escape_say(s);
         serde_xml_rs::from_str(&escaped)
+            .map_err(|e| Error::ResponseDeser(e.to_string(), s.to_string()))
     }
 }
 
