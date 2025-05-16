@@ -6,7 +6,7 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{Result, errors::DigitsError};
+use crate::{Result, errors::DigitsError, twiml::GatherDigit};
 
 #[derive(Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Digits(Vec<Digit>);
@@ -28,12 +28,43 @@ impl Deref for Digits {
 }
 
 impl Digits {
+    /// Returns a slice of digits with all suffixes that match a predicate
+    /// repeatedly removed.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let digits = Digits::from_str("123#").unwrap();
+    /// assert_eq!(digits.trim_end_matches(|d| *d == Digit::Pound).to_string(), "123");
+    ///
+    /// let digits = Digits::from_str("123***").unwrap();
+    /// assert_eq!(digits.trim_end_matches(|d| *d == Digit::Star).to_string(), "123");
+    /// ```
+    #[must_use = "this returns the trimmed digits as a slice, without modifying the original"]
+    pub fn trim_end_matches<F>(&self, predicate: F) -> &[Digit]
+    where
+        F: Fn(&Digit) -> bool,
+    {
+        let mut i = self.0.len();
+
+        // Work backwards from the end
+        for digit in self.0.iter().rev() {
+            if predicate(digit) {
+                i -= 1;
+            } else {
+                break;
+            }
+        }
+
+        &self.0[..i]
+    }
+
     pub fn words(&self) -> Vec<String> {
         self.0.iter().map(Digit::word).collect()
     }
 
     /// Return the integer value of the leading numeric digits if all non-numeric digits appear after all numeric digits; otherwise return None.
-    pub fn to_int(&self) -> Result<u64> {
+    pub fn to_int(&self) -> Result<usize> {
         if self.is_empty() {
             return Err(DigitsError::Empty.into());
         }
@@ -44,7 +75,7 @@ impl Digits {
         }
 
         // Convert only the numeric part to integer.
-        let mut result = 0u64;
+        let mut result = 0usize;
         let mut found_digit = false;
         let mut found_non_digit = false;
         for digit in &self.0 {
@@ -69,7 +100,7 @@ impl Digits {
             }
 
             // Check for potential overflow.
-            if result > u64::MAX / 10 {
+            if result > usize::MAX / 10 {
                 return Err(DigitsError::Overflow.into());
             }
 
@@ -184,7 +215,7 @@ impl Digit {
         matches!(self, Digit::W | Digit::WW)
     }
 
-    pub fn to_int(&self) -> Option<u64> {
+    pub fn to_int(&self) -> Option<usize> {
         match self {
             Digit::Zero => Some(0),
             Digit::One => Some(1),
@@ -197,6 +228,26 @@ impl Digit {
             Digit::Eight => Some(8),
             Digit::Nine => Some(9),
             _ => None,
+        }
+    }
+}
+
+impl From<GatherDigit> for Digit {
+    fn from(value: GatherDigit) -> Self {
+        match value {
+            GatherDigit::Zero => Digit::Zero,
+            GatherDigit::One => Digit::One,
+            GatherDigit::Two => Digit::Two,
+            GatherDigit::Three => Digit::Three,
+            GatherDigit::Four => Digit::Four,
+            GatherDigit::Five => Digit::Five,
+            GatherDigit::Six => Digit::Six,
+            GatherDigit::Seven => Digit::Seven,
+            GatherDigit::Eight => Digit::Eight,
+            GatherDigit::Nine => Digit::Nine,
+            GatherDigit::Star => Digit::Star,
+            GatherDigit::Pound => Digit::Pound,
+            GatherDigit::Empty => Digit::W,
         }
     }
 }
@@ -303,8 +354,8 @@ impl From<u32> for Digits {
     }
 }
 
-impl From<u64> for Digits {
-    fn from(value: u64) -> Self {
+impl From<usize> for Digits {
+    fn from(value: usize) -> Self {
         Digits::from(value as u128)
     }
 }
@@ -415,7 +466,7 @@ impl<'de> Deserialize<'de> for Digits {
 
 #[cfg(test)]
 mod tests {
-    use crate::twiml::Digit;
+    use crate::Digit;
 
     use super::*;
 

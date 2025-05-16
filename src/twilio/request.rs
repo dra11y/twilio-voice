@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::twiml::Digits;
+use crate::Digits;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -117,8 +117,8 @@ pub struct Request {
 #[cfg(test)]
 mod tests {
     use crate::{
+        Digit,
         errors::{DigitsError, Error},
-        twiml::Digit,
     };
 
     use super::*;

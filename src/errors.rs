@@ -28,7 +28,7 @@ pub enum DigitsError {
     ContainsAlphabetic,
     #[error("numeric digits are broken by a non-numeric digit")]
     NumericAfterNonNumeric,
-    #[error("u64 overflow")]
+    #[error("usize overflow")]
     Overflow,
     #[error("invalid character: {0}")]
     InvalidCharacter(char),

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
-use super::Digits;
+use crate::Digits;
 
 /// TwiML Voice: <Play>
 /// https://www.twilio.com/docs/voice/twiml/play

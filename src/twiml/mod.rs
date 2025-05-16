@@ -1,6 +1,3 @@
-mod digits;
-pub use digits::*;
-
 mod redirect;
 pub use redirect::*;
 

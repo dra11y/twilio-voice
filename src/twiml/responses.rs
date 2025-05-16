@@ -78,12 +78,46 @@ impl Response {
     }
 
     pub fn to_xml_pretty(&self) -> String {
-        self.to_xml()
-        // let mut buffer = Vec::new();
-        // let mut writer = Writer::new_with_indent(&mut buffer, b' ', 4);
-        // writer.write_serializable("Response", self).unwrap();
-        // let xml = String::from_utf8(buffer).unwrap();
-        // unescape_say(&xml)
+        #[cfg(not(debug_assertions))]
+        {
+            self.to_xml()
+        }
+        #[cfg(debug_assertions)]
+        {
+            let xml = self
+                .to_xml()
+                .replace('<', "\n<")
+                .replace('>', ">\n")
+                .trim()
+                .to_string();
+
+            if xml.is_empty() {
+                return xml;
+            }
+
+            let mut indent_level: usize = 0;
+            let mut result = String::new();
+
+            for chunk in xml.split('\n') {
+                let chunk = chunk.trim();
+                if chunk.is_empty() {
+                    continue;
+                }
+                if chunk.starts_with("</") {
+                    indent_level = indent_level.saturating_sub(1);
+                }
+
+                result.push_str(&" ".repeat(indent_level * 4));
+                result.push_str(chunk);
+                result.push('\n');
+
+                if chunk.starts_with("<") && !chunk.starts_with("</") && !chunk.ends_with("/>") {
+                    indent_level += 1;
+                }
+            }
+
+            result
+        }
     }
 }
 
@@ -103,12 +137,7 @@ impl VoicePrice for Response {
 #[cfg(feature = "axum")]
 impl axum::response::IntoResponse for Response {
     fn into_response(self) -> axum::response::Response {
-        #[cfg(debug_assertions)]
-        let xml = self.to_xml_pretty();
-
-        #[cfg(not(debug_assertions))]
         let xml = self.to_xml();
-
         ([(axum::http::header::CONTENT_TYPE, "text/xml")], xml).into_response()
     }
 }
