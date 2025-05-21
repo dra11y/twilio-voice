@@ -61,8 +61,7 @@ pub struct Request {
     pub to: String,
 
     /// Any digits dialed by the caller in response to a <Gather>. Excludes the digit of the `finishOnKey` <Gather> parameter. Empty if no digits were entered.
-    #[serde(default)]
-    pub digits: Digits,
+    pub digits: Option<Digits>,
 
     /// A descriptive status for the call. See [`CallStatus`].
     pub call_status: CallStatus,
@@ -127,16 +126,16 @@ mod tests {
 
     #[test]
     fn test_deserialize_and_serialize_request() {
-        let digits = "31#*";
+        let digits_str = "31#*";
         let params = format!(
-            "Digits={digits}&CallSid=4321abcdef0&AccountSid=5678feabcd1&ApiVersion=2010&Direction=inbound&To=%2B12125551234&From=%2B19193332345&CallStatus=in-progress"
+            "Digits={digits_str}&CallSid=4321abcdef0&AccountSid=5678feabcd1&ApiVersion=2010&Direction=inbound&To=%2B12125551234&From=%2B19193332345&CallStatus=in-progress"
         );
         let req: Request =
             serde_urlencoded::de::from_str(&params).expect("failed to deserialize Request");
-        let form = serde_urlencoded::ser::to_string(&req).expect("failed to serialize Request");
-        assert_eq!(req.digits.to_string(), digits);
-        assert_eq!(req.digits.iter().last(), Some(&Digit::Star));
-        let number = req.digits.to_int();
+        let digits = req.digits.expect("digits should be Some");
+        assert_eq!(digits.to_string(), digits_str);
+        assert_eq!(digits.iter().last(), Some(&Digit::Star));
+        let number = digits.to_int();
         assert_eq!(number.unwrap(), 31);
         assert_eq!(req.call_sid, "4321abcdef0");
         assert_eq!(req.account_sid, "5678feabcd1");
@@ -232,10 +231,11 @@ mod tests {
         let req: Request = serde_urlencoded::from_str(params).unwrap();
 
         // Check empty digits
-        assert!(req.digits.is_empty());
-        assert_eq!(req.digits.to_string(), "");
+        let digits = req.digits.expect("digits should be Some");
+        assert!(digits.is_empty());
+        assert_eq!(digits.to_string(), "");
         assert!(matches!(
-            req.digits.to_int(),
+            digits.to_int(),
             Err(Error::Digits(DigitsError::Empty))
         ));
     }
@@ -246,8 +246,8 @@ mod tests {
         let params = "CallSid=CA123&AccountSid=AC456&ApiVersion=2010-04-01&Direction=inbound&To=%2B12125551234&From=%2B19193332345&CallStatus=in-progress";
         let req: Request = serde_urlencoded::from_str(params).unwrap();
 
-        // Digits should be empty when parameter is missing
-        assert!(req.digits.is_empty());
+        // Digits should be None when parameter is missing
+        assert!(req.digits.is_none());
     }
 
     #[test]
@@ -310,8 +310,9 @@ mod tests {
             );
             let req: Request = serde_urlencoded::from_str(&params).unwrap();
 
-            assert_eq!(req.digits.to_string(), digit_str);
-            assert_eq!(req.digits.to_int().ok(), expected_int);
+            let digits = req.digits.expect("digits should be Some");
+            assert_eq!(digits.to_string(), digit_str);
+            assert_eq!(digits.to_int().ok(), expected_int);
         }
     }
 }

@@ -1,12 +1,14 @@
+use crate::{Result, errors::DigitsError, twiml::GatherDigit};
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::{
     fmt,
     ops::{Deref, Index},
     str::FromStr,
+    sync::LazyLock,
 };
 
-use serde::{Deserialize, Serialize};
-
-use crate::{Result, errors::DigitsError, twiml::GatherDigit};
+static STAR_POUND: LazyLock<Regex> = LazyLock::new(|| Regex::new("(?i)star|pound").unwrap());
 
 #[derive(Clone, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Digits(Vec<Digit>);
@@ -28,6 +30,14 @@ impl Deref for Digits {
 }
 
 impl Digits {
+    pub fn empty() -> Self {
+        Digits(vec![])
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Digits(Vec::with_capacity(capacity))
+    }
+
     /// Returns a slice of digits with all suffixes that match a predicate
     /// repeatedly removed.
     ///
@@ -423,9 +433,22 @@ impl FromStr for Digits {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let s = s.trim();
+        if s.is_empty() {
+            return Err(DigitsError::Empty);
+        }
+        let s = STAR_POUND.replace_all(s, |caps: &regex::Captures| {
+            match caps[0].to_lowercase().as_str() {
+                "star" => "*",
+                "pound" => "#",
+                _ => unreachable!(),
+            }
+        });
         let mut digits = Vec::with_capacity(s.len());
         for c in s.chars() {
             digits.push(Digit::try_from(c)?);
+        }
+        if digits.is_empty() {
+            return Err(DigitsError::Empty);
         }
         Ok(Digits(digits))
     }

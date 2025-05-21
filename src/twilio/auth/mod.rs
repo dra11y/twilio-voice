@@ -71,11 +71,13 @@ pub fn get_expected_twilio_signature(
     let code_bytes = result.into_bytes();
     let signature = general_purpose::STANDARD.encode(code_bytes);
 
+    // TODO: debugging option
     // #[cfg(debug_assertions)]
     // {
     //     println!("Signature: {signature}, URL: {url}");
     // }
 
+    #[allow(clippy::let_and_return)]
     signature
 }
 
