@@ -324,6 +324,14 @@ impl TryFrom<String> for Digits {
     }
 }
 
+impl TryFrom<&str> for Digits {
+    type Error = DigitsError;
+
+    fn try_from(value: &str) -> std::result::Result<Self, Self::Error> {
+        Digits::from_str(value)
+    }
+}
+
 impl From<Digit> for Digits {
     fn from(value: Digit) -> Self {
         Digits(vec![value])
@@ -432,6 +440,12 @@ impl FromIterator<Digit> for Digits {
 impl From<Vec<Digit>> for Digits {
     fn from(vec: Vec<Digit>) -> Self {
         Digits(vec)
+    }
+}
+
+impl From<&[Digit]> for Digits {
+    fn from(slice: &[Digit]) -> Self {
+        Digits(slice.to_vec())
     }
 }
 

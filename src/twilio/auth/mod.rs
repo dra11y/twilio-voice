@@ -15,7 +15,7 @@ use url::Url;
 type HmacSha1 = Hmac<Sha1>;
 
 /// Options for validating an incoming request
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct RequestValidatorOptions {
     /// The full URL (with query string) you used to configure the webhook with Twilio - overrides host/protocol options
     pub url: Option<String>,
@@ -23,6 +23,8 @@ pub struct RequestValidatorOptions {
     pub host: Option<String>,
     /// Manually specify the protocol used by Twilio in a number's webhook config
     pub protocol: Option<String>,
+    /// Test both http and https protocol URLs
+    pub test_both_protocols: bool,
 }
 
 /// Get the expected Twilio signature for a given request
@@ -69,10 +71,10 @@ pub fn get_expected_twilio_signature(
     let code_bytes = result.into_bytes();
     let signature = general_purpose::STANDARD.encode(code_bytes);
 
-    #[cfg(debug_assertions)]
-    {
-        println!("Signature: {signature}, URL: {url}");
-    }
+    // #[cfg(debug_assertions)]
+    // {
+    //     println!("Signature: {signature}, URL: {url}");
+    // }
 
     signature
 }
@@ -98,6 +100,23 @@ fn add_port(url: &str) -> String {
 /// Utility function to remove a default port from a URL
 fn remove_port(url: &str) -> String {
     url_with_default_port_strip_auth(url, false)
+}
+
+/// Utility function to force the protocol to https or http
+fn with_https(url: &str, https: bool) -> String {
+    let Some(caps) = PROTO_REGEX.captures(url) else {
+        return url.to_string();
+    };
+    let Some(_) = caps.name("proto").map(|m| m.as_str()) else {
+        return url.to_string();
+    };
+    let Some(rest) = caps.name("rest").map(|m| m.as_str()) else {
+        return url.to_string();
+    };
+    format!(
+        "{proto}://{rest}",
+        proto = if https { "https" } else { "http" }
+    )
 }
 
 /// Validate a signature with a specific URL format
@@ -133,6 +152,13 @@ static URL_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     .case_insensitive(true)
     .build()
     .unwrap()
+});
+
+static PROTO_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+    RegexBuilder::new(r"(?<proto>https?)://(?<rest>.*)$")
+        .case_insensitive(true)
+        .build()
+        .unwrap()
 });
 
 /// Provide URL with/without default port and strip auth if present.
@@ -216,19 +242,27 @@ pub fn validate_request(
     twilio_header: &str,
     url: &str,
     params: &HashMap<String, String>,
+    test_both_protocols: bool,
 ) -> bool {
     // Check signature of the url with and without the port number
     // and with and without the legacy querystring (special chars are encoded when using `new URL()`)
     // since signature generation on the back end is inconsistent.
     //
-    // Additional variants with and without trailing slash added from official SDK.
+    // Additional variants with and without trailing slash are in addition to the official SDK.
     let variants = [
         url.to_string(),
         with_modern_querystring(url),
         with_legacy_querystring(url),
     ]
     .iter()
-    .flat_map(|v| [remove_port(v), add_port(v)])
+    .flat_map(|v| {
+        if test_both_protocols {
+            vec![with_https(v, false), with_https(v, true)]
+        } else {
+            vec![v.clone()]
+        }
+    })
+    .flat_map(|v| [remove_port(&v), add_port(&v)])
     .flat_map(|v| [without_trailing_slash(&v), v])
     .collect::<HashSet<_>>();
 
@@ -265,6 +299,7 @@ pub fn validate_request_with_body(
     twilio_header: &str,
     url: &str,
     body: &str,
+    test_both_protocols: bool,
 ) -> bool {
     let empty_params = HashMap::new();
     let url_object = Url::parse(url).expect("Invalid URL");
@@ -275,8 +310,13 @@ pub fn validate_request_with_body(
         .map(|(_, value)| value.to_string())
         .unwrap_or_default();
 
-    validate_request(auth_token, twilio_header, url, &empty_params)
-        && validate_body(body, &body_hash)
+    validate_request(
+        auth_token,
+        twilio_header,
+        url,
+        &empty_params,
+        test_both_protocols,
+    ) && validate_body(body, &body_hash)
 }
 
 /// Implement on a [`Request`] object for validation.
@@ -304,6 +344,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
     opts: Option<RequestValidatorOptions>,
 ) -> bool {
     let options = opts.unwrap_or_default();
+
     #[cfg(debug_assertions)]
     let validated_with: &str;
 
@@ -338,12 +379,15 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         url
     };
 
+    println!("webhook_url: {webhook_url}");
+
     let is_valid = if webhook_url.contains("bodySHA256") {
         validate_request_with_body(
             auth_token,
             &request.twilio_signature().unwrap_or_default(),
             &webhook_url,
             &request.raw_body().unwrap_or_default(),
+            options.test_both_protocols,
         )
     } else {
         validate_request(
@@ -351,6 +395,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
             &request.twilio_signature().unwrap_or_default(),
             &webhook_url,
             &request.body(),
+            options.test_both_protocols,
         )
     };
 
@@ -454,7 +499,8 @@ mod tests {
                     auth_token,
                     &signature_for_url_with_slash,
                     url_with_slash,
-                    &params
+                    &params,
+                    false
                 ),
                 "trailing slash in Twilio console webhook URL, and trailing slash received on our backend"
             );
@@ -463,7 +509,8 @@ mod tests {
                     auth_token,
                     &signature_for_url_without_slash,
                     url_without_slash,
-                    &params
+                    &params,
+                    false
                 ),
                 "no trailing slash in Twilio console webhook URL, and no trailing slash received on our backend"
             );
@@ -472,7 +519,8 @@ mod tests {
                     auth_token,
                     &signature_for_url_without_slash,
                     url_with_slash,
-                    &params
+                    &params,
+                    false
                 ),
                 "no trailing slash in Twilio console webhook URL, but received trailing slash on our backend - redirect or root URL without path"
             );
@@ -481,7 +529,8 @@ mod tests {
                     auth_token,
                     &signature_for_url_with_slash,
                     url_without_slash,
-                    &params
+                    &params,
+                    false
                 ),
                 "should never be valid, because our backend should never strip an existing trailing slash from the request"
             );
@@ -658,7 +707,8 @@ mod tests {
             auth_token,
             &expected_signature,
             url,
-            &params
+            &params,
+            false
         ));
 
         // Test failure cases
@@ -668,7 +718,8 @@ mod tests {
             "wrong_auth_token",
             &expected_signature,
             url,
-            &params
+            &params,
+            false
         ));
 
         // 2. Tampered signature - force a completely different signature
@@ -677,7 +728,8 @@ mod tests {
             auth_token,
             tampered_signature,
             url,
-            &params
+            &params,
+            false
         ));
 
         // 3. Modified URL
@@ -685,7 +737,8 @@ mod tests {
             auth_token,
             &expected_signature,
             "https://example.com/myapp.php?foo=1&bar=3", // changed query param
-            &params
+            &params,
+            false
         ));
 
         // 4. Modified params
@@ -695,7 +748,8 @@ mod tests {
             auth_token,
             &expected_signature,
             url,
-            &tampered_params
+            &tampered_params,
+            false
         ));
 
         // 5. Additional param
@@ -705,7 +759,8 @@ mod tests {
             auth_token,
             &expected_signature,
             url,
-            &extended_params
+            &extended_params,
+            false
         ));
 
         // 6. Missing param
@@ -715,7 +770,8 @@ mod tests {
             auth_token,
             &expected_signature,
             url,
-            &reduced_params
+            &reduced_params,
+            false
         ));
     }
 
@@ -734,7 +790,8 @@ mod tests {
             auth_token,
             &expected_signature,
             &url,
-            body
+            body,
+            false
         ));
 
         // Test failure cases
@@ -744,7 +801,8 @@ mod tests {
             "wrong_auth_token",
             &expected_signature,
             &url,
-            body
+            body,
+            false
         ));
 
         // 2. Tampered signature - completely different signature
@@ -753,7 +811,8 @@ mod tests {
             auth_token,
             tampered_signature,
             &url,
-            body
+            body,
+            false
         ));
 
         // 3. Modified body
@@ -762,7 +821,8 @@ mod tests {
             auth_token,
             &expected_signature,
             &url,
-            &modified_body
+            &modified_body,
+            false
         ));
 
         // 4. Modified URL (but keeping the same hash)
@@ -771,7 +831,8 @@ mod tests {
             auth_token,
             &expected_signature,
             &modified_url,
-            body
+            body,
+            false
         ));
     }
 
@@ -879,7 +940,9 @@ mod tests {
         // URL with special chars that might be encoded differently
         let url = "https://example.com/path?q=a+b&r=c%20d&s=e%2Bf";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
-        assert!(validate_request(auth_token, &signature, url, &params));
+        assert!(validate_request(
+            auth_token, &signature, url, &params, false
+        ));
     }
 
     #[test]
@@ -896,7 +959,13 @@ mod tests {
         let signature_without_auth =
             get_expected_twilio_signature(auth_token, &url_without_auth, &params);
         assert!(
-            validate_request(auth_token, &signature_without_auth, &url_with_auth, &params),
+            validate_request(
+                auth_token,
+                &signature_without_auth,
+                &url_with_auth,
+                &params,
+                false
+            ),
             "Twilio always strips auth from the URL"
         );
 
@@ -906,7 +975,13 @@ mod tests {
             get_expected_twilio_signature(auth_token, &url_without_auth, &params);
         assert_eq!(signature_with_auth, signature_without_auth);
         assert!(
-            validate_request(auth_token, &signature_with_auth, &url_without_auth, &params),
+            validate_request(
+                auth_token,
+                &signature_with_auth,
+                &url_without_auth,
+                &params,
+                false
+            ),
             "our algorithm should strip auth as well"
         );
     }
@@ -930,7 +1005,13 @@ mod tests {
         let params = HashMap::new();
 
         // Invalid URL should return false
-        assert!(!validate_request(auth_token, "", "not-a-url", &params));
+        assert!(!validate_request(
+            auth_token,
+            "",
+            "not-a-url",
+            &params,
+            false
+        ));
 
         // Extremely long auth token
         let long_token = "a".repeat(1000);
@@ -938,7 +1019,8 @@ mod tests {
             &long_token,
             "",
             "https://example.com",
-            &params
+            &params,
+            false
         ));
 
         // Null bytes in signature (security test)
@@ -947,7 +1029,8 @@ mod tests {
             auth_token,
             null_byte_sig,
             "https://example.com",
-            &params
+            &params,
+            false
         ));
     }
 
@@ -983,10 +1066,10 @@ mod tests {
         );
 
         // All signatures should validate the original URL
-        assert!(validate_request(auth_token, &sig1, url, &params));
-        assert!(validate_request(auth_token, &sig2, url, &params));
-        assert!(validate_request(auth_token, &sig3, url, &params));
-        assert!(validate_request(auth_token, &sig4, url, &params));
+        assert!(validate_request(auth_token, &sig1, url, &params, false));
+        assert!(validate_request(auth_token, &sig2, url, &params, false));
+        assert!(validate_request(auth_token, &sig3, url, &params, false));
+        assert!(validate_request(auth_token, &sig4, url, &params, false));
     }
 
     #[test]
@@ -1001,7 +1084,9 @@ mod tests {
 
         let url = "https://example.com";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
-        assert!(validate_request(auth_token, &signature, url, &params));
+        assert!(validate_request(
+            auth_token, &signature, url, &params, false
+        ));
     }
 
     #[test]
@@ -1018,7 +1103,9 @@ mod tests {
         params.insert("键".to_string(), "值".to_string());
 
         let signature = get_expected_twilio_signature(auth_token, url, &params);
-        assert!(validate_request(auth_token, &signature, url, &params));
+        assert!(validate_request(
+            auth_token, &signature, url, &params, false
+        ));
     }
 
     #[test]
@@ -1029,7 +1116,9 @@ mod tests {
 
         let url = "https://example.com/unicode";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
-        assert!(validate_request(auth_token, &signature, url, &params));
+        assert!(validate_request(
+            auth_token, &signature, url, &params, false
+        ));
     }
 
     #[test]
@@ -1146,6 +1235,7 @@ mod tests {
             url: Some(webhook_url.to_string()),
             host: None,
             protocol: None,
+            test_both_protocols: false,
         };
         assert!(validate_incoming_request(
             &request_with_sig,
@@ -1158,6 +1248,7 @@ mod tests {
             url: None,
             host: Some("custom.com".to_string()),
             protocol: Some("https".to_string()),
+            test_both_protocols: false,
         };
         assert!(validate_incoming_request(
             &request_with_sig,
@@ -1179,6 +1270,7 @@ mod tests {
             url: Some("https://custom2.com/wrong?query=value".to_string()),
             host: None,
             protocol: None,
+            test_both_protocols: false,
         };
         assert!(!validate_incoming_request(
             &request_with_sig,
@@ -1271,13 +1363,15 @@ mod tests {
             auth_token,
             &sig_without_port,
             url_without_port,
-            &params
+            &params,
+            false,
         ));
         assert!(validate_request(
             auth_token,
             &sig_with_port,
             url_with_port,
-            &params
+            &params,
+            false,
         ));
 
         // Cross-validation tests - validation should pass with various combinations
@@ -1286,13 +1380,15 @@ mod tests {
             auth_token,
             &sig_with_port,
             url_without_port,
-            &params
+            &params,
+            false,
         ));
         assert!(validate_request(
             auth_token,
             &sig_without_port,
             url_with_port,
-            &params
+            &params,
+            false,
         ));
     }
 
@@ -1321,13 +1417,15 @@ mod tests {
             auth_token,
             &signature,
             url_standard,
-            &params
+            &params,
+            false,
         ));
         assert!(validate_request(
             auth_token,
             &signature,
             url_encoded,
-            &params
+            &params,
+            false,
         ));
 
         // And signature generated with the encoded URL should also validate against both URLs
@@ -1336,13 +1434,15 @@ mod tests {
             auth_token,
             &signature_encoded,
             url_standard,
-            &params
+            &params,
+            false,
         ));
         assert!(validate_request(
             auth_token,
             &signature_encoded,
             url_encoded,
-            &params
+            &params,
+            false,
         ));
     }
 }

@@ -59,6 +59,37 @@ pub enum GatherDigit {
     Empty,
 }
 
+#[derive(Debug, Clone, Copy, strum::Display, strum::IntoStaticStr, PartialEq, Eq)]
+#[strum(prefix = "$", serialize_all = "SCREAMING_SNAKE_CASE")]
+pub enum SpeechHint {
+    OovClassAlphanumericSequence,
+    OovClassAlphaSequence,
+    OovClassAmRadioFrequency,
+    OovClassDigitSequence,
+    OovClassFmRadioFrequency,
+    OovClassFullphonenum,
+    OovClassOrdinal,
+    OovClassTemperature,
+    OovClassTvChannel,
+    Addressnum,
+    Day,
+    Fullphonenum,
+    Money,
+    Month,
+    Operand,
+    Percent,
+    Postalcode,
+    Street,
+    Time,
+    Year,
+}
+
+impl SpeechHint {
+    pub fn as_str(&self) -> &str {
+        self.into()
+    }
+}
+
 /// TwiML Voice: <Gather>
 /// https://www.twilio.com/docs/voice/twiml/gather
 #[serde_with::skip_serializing_none]
@@ -137,7 +168,7 @@ pub struct Gather {
     /// Documentation: https://www.twilio.com/docs/voice/twiml/gather#input
     #[serde(rename = "@input")]
     #[builder(default)]
-    pub input: InputType,
+    pub input: GatherInput,
 
     /// The `language` attribute specifies the language Twilio should recognize from your caller.
     ///
@@ -311,11 +342,13 @@ impl VoicePrice for Gather {
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum InputType {
+pub enum GatherInput {
     #[default]
+    #[serde(rename = "dtmf")]
     Dtmf,
+    #[serde(rename = "speech")]
     Speech,
+    #[serde(rename = "dtmf speech")]
     DtmfSpeech,
 }
 
@@ -325,6 +358,36 @@ pub enum SpeechTimeout {
     Auto,
     #[serde(untagged)]
     Seconds(#[serde(deserialize_with = "deserialize_seconds")] u8),
+}
+
+impl From<u8> for SpeechTimeout {
+    fn from(seconds: u8) -> Self {
+        Self::Seconds(seconds)
+    }
+}
+
+impl From<u16> for SpeechTimeout {
+    fn from(seconds: u16) -> Self {
+        Self::from(seconds as usize)
+    }
+}
+
+impl From<u32> for SpeechTimeout {
+    fn from(seconds: u32) -> Self {
+        Self::from(seconds as usize)
+    }
+}
+
+impl From<u64> for SpeechTimeout {
+    fn from(seconds: u64) -> Self {
+        Self::from(seconds as usize)
+    }
+}
+
+impl From<usize> for SpeechTimeout {
+    fn from(seconds: usize) -> Self {
+        Self::Seconds((seconds % u8::MAX as usize) as u8)
+    }
 }
 
 fn deserialize_seconds<'de, D>(deserializer: D) -> Result<u8, D::Error>

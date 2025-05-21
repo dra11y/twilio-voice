@@ -29,9 +29,9 @@ impl TwilioLayer {
         }
     }
 
-    pub fn with_options(auth_token: String, options: super::RequestValidatorOptions) -> Self {
+    pub fn with_options(auth_token: &str, options: super::RequestValidatorOptions) -> Self {
         Self {
-            auth_token,
+            auth_token: auth_token.to_string(),
             options: Some(options),
         }
     }

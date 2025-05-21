@@ -26,7 +26,8 @@ pub enum ResponseVerb {
 
 #[derive(Debug, Clone, PartialEq, Eq, TypedBuilder, Serialize, Deserialize)]
 pub struct Response {
-    #[serde(rename = "#content")]
+    #[builder(default)]
+    #[serde(default, rename = "#content")]
     pub verbs: Vec<ResponseVerb>,
 }
 
@@ -217,7 +218,7 @@ mod tests {
     use std::str::FromStr;
 
     use crate::twiml::{
-        self, GatherBuilderVerbs, GatherDigit, GatherVerb, InputType, Language, SpeechModel,
+        self, GatherBuilderVerbs, GatherDigit, GatherInput, GatherVerb, Language, SpeechModel,
         SpeechTimeout, Voice,
         voices::{self, GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
     };
@@ -709,7 +710,7 @@ mod tests {
 
         let gather = Gather::builder()
             .action("/process_speech".to_string())
-            .input(InputType::Speech)
+            .input(GatherInput::Speech)
             .speech_model(SpeechModel::PhoneCall)
             .language(Language::EnUs)
             .say(
