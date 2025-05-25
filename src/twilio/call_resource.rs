@@ -5,13 +5,30 @@ use crate::PriceType;
 use super::{CallStatus, Direction};
 use super::{deserialize_opt_price_type, deserialize_opt_string, deserialize_opt_usize};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
+/// Either human or machine if this call was initiated with answering machine detection. Empty otherwise.
+/// Examples also have `machine_start`
+/// https://www.twilio.com/docs/voice/api/call-resource
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "snake_case")]
 pub enum AnsweredBy {
     Human,
+    /// `machine` or `machine_start`
+    #[serde(alias = "machine_start")]
     Machine,
 }
+
+/// A **Call** is an object that represents a connection between a telephone and Twilio.
+/// Using this resource, you can initiate a call, fetch information about a completed call, fetch a list of calls made to and from your account, redirect or end a call that is in progress, and delete records of past calls from your account.
+///
+/// An _inbound call_ occurs when a person calls one of your Twilio phone numbers, client connections, or SIP-enabled endpoints. An _outbound call_ happens when you initiate a call from a Twilio phone number to an outside phone number, client, or SIP domain.
+///
+/// You can initiate an outbound call by sending an HTTP `POST` request to the [Call resource](https://www.twilio.com/docs/voice/api/call-resource "Call resource"). Calls are rate limited at the account level by Calls Per Second (CPS). Calls beyond your account's CPS limit will be queued and will execute at the CPS rate.
+///
+/// The `queue_time` parameter provides an estimate for how long before the call is executed. You can reduce `queue_time` by increasing the CPS value on your account.
+///
+/// https://www.twilio.com/docs/voice/api/call-resource
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 // Twilio API JSON keys are snake_case, and webhook params are camelCase.
 #[serde(rename_all = "snake_case")]
@@ -122,4 +139,107 @@ pub struct CallResource {
 
     /// A list of subresources available to this call, identified by their URIs relative to `https://api.twilio.com`.
     pub subresource_uris: HashMap<String, String>,
+
+    /// An undocumented field (see examples at https://www.twilio.com/docs/voice/api/call-resource)
+    #[serde(default)]
+    pub annotation: Option<String>,
+
+    /// Any extra available fields we may have missed.
+    #[serde(flatten)]
+    pub extra: HashMap<String, Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::twilio::AnsweredBy;
+
+    const TEST_CALL_RESOURCE: &str = r#"
+    {
+        "account_sid": "AC85b51c096162dbe331074f1abe07545e",
+        "annotation": "billingreferencetag1",
+        "answered_by": "machine_start",
+        "api_version": "2010-04-01",
+        "caller_name": null,
+        "date_created": "Sun, 25 May 2025 22:15:33 +0000",
+        "date_updated": "Sun, 25 May 2025 22:15:38 +0000",
+        "direction": "inbound",
+        "duration": "5",
+        "end_time": "Sun, 25 May 2025 22:15:38 +0000",
+        "forwarded_from": "+12345678901",
+        "from": "+12345678901",
+        "from_formatted": "(234) 567-8901",
+        "group_sid": null,
+        "parent_call_sid": null,
+        "phone_number_sid": "PN0956adb6c72104b7a5df2c18fe613b41",
+        "price": "-0.00850",
+        "price_unit": "USD",
+        "queue_time": "0",
+        "sid": "CAfce1a6c4d9c888b578f092c58b0f1708",
+        "start_time": "Sun, 25 May 2025 22:15:33 +0000",
+        "status": "completed",
+        "subresource_uris": {
+            "events": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Events.json",
+            "notifications": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Notifications.json",
+            "payments": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Payments.json",
+            "recordings": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Recordings.json",
+            "siprec": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Siprec.json",
+            "streams": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Streams.json",
+            "transcriptions": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Transcriptions.json",
+            "user_defined_message_subscriptions": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessageSubscriptions.json",
+            "user_defined_messages": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessages.json"
+        },
+        "to": "+12345678900",
+        "to_formatted": "(234) 567-8900",
+        "trunk_sid": "",
+        "uri": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708.json"
+    }
+    "#;
+
+    #[test]
+    pub fn test_deserialize() {
+        use super::CallResource;
+        use serde_json::from_str;
+
+        let call: CallResource =
+            from_str(TEST_CALL_RESOURCE).expect("Failed to deserialize CallResource");
+        assert_eq!(call.sid, "CAfce1a6c4d9c888b578f092c58b0f1708");
+        assert_eq!(call.status, super::CallStatus::Completed);
+        assert_eq!(call.to, "+12345678900");
+        assert_eq!(call.from, "+12345678901");
+        assert_eq!(call.price_unit, Some("USD".to_string()));
+        assert_eq!(call.duration, Some(5));
+        assert_eq!(call.price, Some("-0.00850".parse().unwrap()));
+        assert_eq!(
+            call.date_created,
+            Some("Sun, 25 May 2025 22:15:33 +0000".to_string())
+        );
+        assert_eq!(
+            call.date_updated,
+            Some("Sun, 25 May 2025 22:15:38 +0000".to_string())
+        );
+        assert_eq!(call.to_formatted, "(234) 567-8900");
+        assert_eq!(call.from_formatted, "(234) 567-8901");
+        assert_eq!(
+            call.phone_number_sid,
+            Some("PN0956adb6c72104b7a5df2c18fe613b41".to_string())
+        );
+        assert_eq!(call.forwarded_from, Some("+12345678901".to_string()));
+        assert_eq!(call.queue_time, Some(0));
+        assert_eq!(call.direction, super::Direction::Inbound);
+        assert!(call.group_sid.is_none());
+        assert!(call.trunk_sid.is_none());
+        assert_eq!(call.api_version, "2010-04-01");
+        assert_eq!(call.subresource_uris.get("events"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Events.json".to_string()));
+        assert_eq!(call.subresource_uris.get("notifications"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Notifications.json".to_string()));
+        assert_eq!(call.subresource_uris.get("payments"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Payments.json".to_string()));
+        assert_eq!(call.subresource_uris.get("recordings"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Recordings.json".to_string()));
+        assert_eq!(call.subresource_uris.get("siprec"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Siprec.json".to_string()));
+        assert_eq!(call.subresource_uris.get("streams"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Streams.json".to_string()));
+        assert_eq!(call.subresource_uris.get("transcriptions"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Transcriptions.json".to_string()));
+        assert_eq!(call.subresource_uris.get("user_defined_message_subscriptions"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessageSubscriptions.json".to_string()));
+        assert_eq!(call.subresource_uris.get("user_defined_messages"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessages.json".to_string()));
+        assert_eq!(call.annotation, Some("billingreferencetag1".to_string()));
+        assert_eq!(call.answered_by, Some(AnsweredBy::Machine));
+        assert!(call.extra.is_empty());
+    }
 }
