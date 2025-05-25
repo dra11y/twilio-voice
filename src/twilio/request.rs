@@ -89,6 +89,27 @@ where
         .map_err(serde::de::Error::custom)
 }
 
+fn deserialize_extra<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let mut value = Value::deserialize(deserializer)?;
+    let Some(obj) = value.as_object_mut() else {
+        return Ok(HashMap::new());
+    };
+
+    for field in StatusCallback::FIELD_NAMES_AS_SLICE {
+        obj.remove(*field);
+    }
+
+    let map = obj
+        .iter()
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect::<HashMap<String, Value>>();
+
+    Ok(map)
+}
+
 /// StatusCallback Parameters
 /// https://www.twilio.com/docs/voice/api/call-resource#statuscallback
 #[derive(Debug, Default, Clone, FieldNamesAsSlice, PartialEq, Serialize, Deserialize)]
@@ -347,7 +368,7 @@ pub struct Request {
     /// - `CalledState` = `ToState`
     /// - `CalledZip` = `ToZip`
     /// - `CalledCountry` = `ToCountry`
-    #[serde(flatten)]
+    #[serde(flatten, deserialize_with = "deserialize_extra")]
     extra: HashMap<String, Value>,
 }
 
@@ -596,7 +617,24 @@ mod tests {
 
         assert_eq!(sc.sequence_number, Some(2));
         assert_eq!(sc.sip_response_code, Some(404));
-        assert!(sc.duration.is_none());
+        assert!(sc.duration.is_none(), "duration should be None");
+        assert!(req.extra.is_empty(), "extra should be empty");
+    }
+
+    #[test]
+    fn partial_status_callback_and_extra_fields() {
+        let mut json = base_request_json_for_status_callback();
+        json["SequenceNumber"] = json!("2");
+        json["SipResponseCode"] = json!(404);
+        json["SomeOtherField"] = json!("hello");
+
+        let req: Request = serde_json::from_value(json).unwrap();
+        let sc = req.status_callback.unwrap();
+
+        assert_eq!(sc.sequence_number, Some(2));
+        assert_eq!(sc.sip_response_code, Some(404));
+        assert!(!req.extra.is_empty(), "extra should NOT be empty");
+        assert_eq!(req.extra["SomeOtherField"], Value::from("hello"));
     }
 
     #[test]
