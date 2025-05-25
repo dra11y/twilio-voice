@@ -201,7 +201,7 @@ mod tests {
 
         let call: CallResource =
             from_str(TEST_CALL_RESOURCE).expect("Failed to deserialize CallResource");
-        assert_eq!(call.sid, "CAfce1a6c4d9c888b578f092c58b0f1708");
+        assert_eq!(call.sid, "CA0123456789abcdef0123456789abcdef");
         assert_eq!(call.status, super::CallStatus::Completed);
         assert_eq!(call.to, "+12345678900");
         assert_eq!(call.from, "+12345678901");
@@ -220,7 +220,7 @@ mod tests {
         assert_eq!(call.from_formatted, "(234) 567-8901");
         assert_eq!(
             call.phone_number_sid,
-            Some("PN0956adb6c72104b7a5df2c18fe613b41".to_string())
+            Some("PN0123456789abcdef0123456789abcdef".to_string())
         );
         assert_eq!(call.forwarded_from, Some("+12345678901".to_string()));
         assert_eq!(call.queue_time, Some(0));
@@ -228,15 +228,15 @@ mod tests {
         assert!(call.group_sid.is_none());
         assert!(call.trunk_sid.is_none());
         assert_eq!(call.api_version, "2010-04-01");
-        assert_eq!(call.subresource_uris.get("events"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Events.json".to_string()));
-        assert_eq!(call.subresource_uris.get("notifications"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Notifications.json".to_string()));
-        assert_eq!(call.subresource_uris.get("payments"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Payments.json".to_string()));
-        assert_eq!(call.subresource_uris.get("recordings"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Recordings.json".to_string()));
-        assert_eq!(call.subresource_uris.get("siprec"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Siprec.json".to_string()));
-        assert_eq!(call.subresource_uris.get("streams"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Streams.json".to_string()));
-        assert_eq!(call.subresource_uris.get("transcriptions"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Transcriptions.json".to_string()));
-        assert_eq!(call.subresource_uris.get("user_defined_message_subscriptions"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessageSubscriptions.json".to_string()));
-        assert_eq!(call.subresource_uris.get("user_defined_messages"), Some(&"/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessages.json".to_string()));
+        assert_eq!(call.subresource_uris.get("events"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Events.json".to_string()));
+        assert_eq!(call.subresource_uris.get("notifications"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Notifications.json".to_string()));
+        assert_eq!(call.subresource_uris.get("payments"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Payments.json".to_string()));
+        assert_eq!(call.subresource_uris.get("recordings"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Recordings.json".to_string()));
+        assert_eq!(call.subresource_uris.get("siprec"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Siprec.json".to_string()));
+        assert_eq!(call.subresource_uris.get("streams"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Streams.json".to_string()));
+        assert_eq!(call.subresource_uris.get("transcriptions"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Transcriptions.json".to_string()));
+        assert_eq!(call.subresource_uris.get("user_defined_message_subscriptions"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/UserDefinedMessageSubscriptions.json".to_string()));
+        assert_eq!(call.subresource_uris.get("user_defined_messages"), Some(&"/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/UserDefinedMessages.json".to_string()));
         assert_eq!(call.annotation, Some("billingreferencetag1".to_string()));
         assert_eq!(call.answered_by, Some(AnsweredBy::Machine));
         assert!(call.extra.is_empty());
