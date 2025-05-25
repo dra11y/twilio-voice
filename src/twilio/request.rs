@@ -1,4 +1,8 @@
-use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_json::Value;
+use struct_field_names_as_array::FieldNamesAsSlice;
 
 use crate::Digits;
 
@@ -45,6 +49,187 @@ pub enum Direction {
     OutboundDial,
 }
 
+fn deserialize_opt_usize<'de, D>(deserializer: D) -> Result<Option<usize>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrInt {
+        Str(String),
+        Int(usize),
+    }
+
+    match Option::<StringOrInt>::deserialize(deserializer)? {
+        Some(StringOrInt::Str(s)) => s.parse().map(Some).map_err(serde::de::Error::custom),
+        Some(StringOrInt::Int(i)) => Ok(Some(i)),
+        None => Ok(None),
+    }
+}
+
+fn deserialize_status_callback<'de, D>(deserializer: D) -> Result<Option<StatusCallback>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Value::deserialize(deserializer)?;
+    let Some(obj) = value.as_object() else {
+        return Ok(None);
+    };
+
+    let has_any_field = obj
+        .keys()
+        .any(|k| StatusCallback::FIELD_NAMES_AS_SLICE.contains(&k.as_str()));
+
+    if !has_any_field {
+        return Ok(None);
+    }
+
+    StatusCallback::deserialize(value)
+        .map(Some)
+        .map_err(serde::de::Error::custom)
+}
+
+/// StatusCallback Parameters
+/// https://www.twilio.com/docs/voice/api/call-resource#statuscallback
+#[derive(Debug, Default, Clone, FieldNamesAsSlice, PartialEq, Serialize, Deserialize)]
+#[field_names_as_slice(rename_all = "PascalCase")]
+#[serde(rename_all = "PascalCase")]
+pub struct StatusCallback {
+    /// The duration in minutes of the just-completed call; calls are billed by the minute. Only present in the `completed` event.
+    #[serde(default, deserialize_with = "deserialize_opt_usize")]
+    duration: Option<usize>,
+
+    /// The duration in seconds of the just-completed call. Only present in the `completed` event.
+    #[serde(default, deserialize_with = "deserialize_opt_usize")]
+    call_duration: Option<usize>,
+
+    /// The final SIP code for the call. For example, a number that was unreachable will return 404. If the Timeout value was reached before the call connected, this code will be 487.
+    #[serde(default, deserialize_with = "deserialize_opt_usize")]
+    sip_response_code: Option<usize>,
+
+    /// The URL of the phone call's recorded audio. This parameter is included only if `Record=true` is set on the REST API request and does not include recordings initiated in other ways. `RecordingUrl` is only present in the `completed` event. The recording file may not yet be accessible when the Status Callback is sent.
+    /// _**Note:**_ _Use RecordingStatusCallback for reliable notification on when the recording is available for access._
+    #[serde(default)]
+    recording_url: Option<String>,
+
+    /// The unique ID of the [Recording](https://www.twilio.com/docs/voice/api/recording "Recording") from this call. `RecordingSid` is only present with the `completed` event.
+    #[serde(default)]
+    recording_sid: Option<String>,
+
+    /// The duration of the recorded audio (in seconds). `RecordingDuration` is only present in the `completed` event. To get a final accurate recording duration after any trimming of silence, use `RecordingStatusCallback`.
+    #[serde(default, deserialize_with = "deserialize_opt_usize")]
+    recording_duration: Option<usize>,
+
+    /// The timestamp when the event fired, given as UTC in [RFC 2822(link takes you to an external page)](https://php.net/manual/en/class.datetime.php#datetime.constants.rfc2822 "RFC 2822") format.
+    #[serde(default)]
+    timestamp: Option<String>,
+
+    /// A string that describes the source of the webhook. This is provided to help disambiguate why the webhook was made. On Status Callbacks, this value is always `call-progress-events`.
+    #[serde(default)]
+    callback_source: Option<String>,
+
+    /// The order in which the events were fired, starting from `0`. Although events are fired in order, they are made as separate HTTP requests, and there is no guarantee they will arrive in the same order.
+    #[serde(default, deserialize_with = "deserialize_opt_usize")]
+    sequence_number: Option<usize>,
+}
+
+/// Trusted Calling with SHAKEN/STIR
+///
+/// To understand the possible values for the `StirVerstat` parameter/`X-Twilio-VerStat` header, you will first need to understand the three different **attestation levels**:
+/// - `A`: the highest attestation given by the originating service provider to indicate that the caller is known and has the right to use the phone number as the caller ID
+/// - `B`: the customer is known, it is unknown if they have the right to use the caller ID being used
+/// - `C`: it doesn't meet the requirements of A or B including international calls.
+///
+/// https://www.twilio.com/docs/voice/trusted-calling-with-shakenstir
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum StirVerstat {
+    // Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
+    // Attestation level `A`
+    #[serde(rename = "TN-Validation-Passed-A")]
+    TnValidationPassedA,
+
+    /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
+    /// Attestation level `B`
+    #[serde(rename = "TN-Validation-Passed-B")]
+    TnValidationPassedB,
+
+    /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
+    /// Attestation level `C`
+    #[serde(rename = "TN-Validation-Passed-C")]
+    TnValidationPassedC,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
+    /// Attestation level `A`
+    #[serde(rename = "TN-Validation-Failed-A")]
+    TnValidationFailedA,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
+    /// Attestation level `B`
+    #[serde(rename = "TN-Validation-Failed-B")]
+    TnValidationFailedB,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
+    /// Attestation level `C`
+    #[serde(rename = "TN-Validation-Failed-C")]
+    TnValidationFailedC,
+
+    /// Possible causes:
+    /// - A malformed [E.164](https://www.twilio.com/docs/glossary/what-e164 "E.164") phone number.
+    /// - SHAKEN PASSporT format is invalid. It should consist of a header, payload, signature, and parameters.
+    /// - SHAKEN PASSporT does not have required fields like `ppt` headers or `info` parameter.
+    /// - SHAKEN PASSporT `orig` field doesn't match with actual `callerid` in the SIP messages (`P-Asserted-Identity`, `Remote-Party-Identity`, or `From` header).
+    /// - SHAKEN PASSporT `dest` field doesn't match with the actual destination of the call in the SIP Request-URI.
+    /// - SHAKEN PASSporT `iat` field is too old - more than 1 minutes from current timestamp or the SIP Date header value.
+    #[serde(rename = "No-TN-Validation")]
+    NoTnValidation,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
+    /// No attestation level determined.    #[serde(rename = "TN-Validation-Failed")]
+    TnValidationFailed,
+
+    /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
+    /// This verifies that no one tampered with the SIP INVITE during transit.
+    /// Attestation level `A`
+    #[serde(rename = "TN-Validation-Passed-A-Diverted")]
+    TnValidationPassedADiverted,
+
+    /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
+    /// This verifies that no one tampered with the SIP INVITE during transit.
+    /// Attestation level `B`
+    #[serde(rename = "TN-Validation-Passed-B-Diverted")]
+    TnValidationPassedBDiverted,
+
+    /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
+    /// This verifies that no one tampered with the SIP INVITE during transit.
+    /// Attestation level `C`
+    #[serde(rename = "TN-Validation-Passed-C-Diverted")]
+    TnValidationPassedCDiverted,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
+    /// Attestation level `A`
+    #[serde(rename = "TN-Validation-Failed-A-Diverted")]
+    TnValidationFailedADiverted,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
+    /// Attestation level `B`
+    #[serde(rename = "TN-Validation-Failed-B-Diverted")]
+    TnValidationFailedBDiverted,
+
+    /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
+    /// Attestation level `C`
+    #[serde(rename = "TN-Validation-Failed-C-Diverted")]
+    TnValidationFailedCDiverted,
+}
+
+/// Twilio Voice Webhook Request Parameters
+/// https://www.twilio.com/docs/voice/twiml#request-parameters
 #[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Request {
@@ -60,12 +245,6 @@ pub struct Request {
     /// The phone number or client identifier of the called party. Phone numbers are formatted with a '+' and country code, e.g., +16175551212(E.164 format). Client identifiers begin with the client: URI scheme; for example, for a call to a client named 'joey', the To parameter will be client:joey.
     pub to: String,
 
-    /// Any digits dialed by the caller in response to a <Gather>. Excludes the digit of the `finishOnKey` <Gather> parameter. Empty if no digits were entered.
-    pub digits: Option<Digits>,
-
-    /// A descriptive status for the call. See [`CallStatus`].
-    pub call_status: CallStatus,
-
     /// The version of the Twilio API used to handle this call. For incoming calls, this is determined by the API version set on the called number. For outgoing calls, this is the version used by the REST API request from the outgoing call.
     pub api_version: String,
 
@@ -73,56 +252,125 @@ pub struct Request {
     pub direction: Direction,
 
     /// This parameter is set only when Twilio receives a forwarded call, but its value depends on the caller's carrier including information when forwarding. Not all carriers support passing this information.
+    #[serde(default)]
     pub forwarded_from: Option<String>,
 
     /// This parameter is set when the IncomingPhoneNumber that received the call has had its VoiceCallerIdLookup value set to true.
+    #[serde(default)]
     pub caller_name: Option<String>,
 
     /// A unique identifier for the call that created this leg. This parameter is not passed if this is the first leg of a call.
+    #[serde(default)]
     pub parent_call_sid: Option<String>,
 
     /// A token string needed to invoke a forwarded call.
+    #[serde(default)]
     pub call_token: Option<String>,
 
     /// The city of the caller
+    #[serde(default)]
     pub from_city: Option<String>,
 
     /// The state or province of the caller
+    #[serde(default)]
     pub from_state: Option<String>,
 
     /// The postal code of the caller
+    #[serde(default)]
     pub from_zip: Option<String>,
 
     /// The country of the caller
+    #[serde(default)]
     pub from_country: Option<String>,
 
     /// The city of the called party
+    #[serde(default)]
     pub to_city: Option<String>,
 
     /// The state or province of the called party
+    #[serde(default)]
     pub to_state: Option<String>,
 
     /// The postal code of the called party
+    #[serde(default)]
     pub to_zip: Option<String>,
 
     /// The country of the called party
+    #[serde(default)]
     pub to_country: Option<String>,
 
+    /// A descriptive status for the call. See [`CallStatus`].
+    pub call_status: CallStatus,
+
+    /// Trusted Calling with SHAKEN/STIR
+    ///
+    /// To understand the possible values for the `StirVerstat` parameter/`X-Twilio-VerStat` header, you will first need to understand the three different **attestation levels**:
+    /// - `A`: the highest attestation given by the originating service provider to indicate that the caller is known and has the right to use the phone number as the caller ID
+    /// - `B`: the customer is known, it is unknown if they have the right to use the caller ID being used
+    /// - `C`: it doesn't meet the requirements of A or B including international calls.
+    ///
+    /// A `None` value means:
+    ///   - SHAKEN/STIR is not enabled in the account, or
+    ///   - Twilio was unable to verify the contents of the SHAKEN PASSporT.
+    ///     This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
+    ///     No attestation level determined.
+    ///
+    /// https://www.twilio.com/docs/voice/trusted-calling-with-shakenstir
+    #[serde(default)]
+    pub stir_verstat: Option<StirVerstat>,
+
     /// If `<Gather input>` included `speech`, contains the transcribed result of the caller's speech.
+    #[serde(default)]
     pub speech_result: Option<String>,
 
     /// If `<Gather input>` included `speech`, might contain (not guaranteed) a confidence score (between 0.0 and 1.0) of the accuracy of the transcription.
+    #[serde(default)]
     pub confidence: Option<f64>,
+
+    /// Any digits dialed by the caller in response to a <Gather>. Excludes the digit of the `finishOnKey` <Gather> parameter. Empty if no digits were entered.
+    #[serde(default)]
+    pub digits: Option<Digits>,
+
+    /// Additional parameters included in a Twilio StatusCallback request.
+    #[serde(flatten, deserialize_with = "deserialize_status_callback")]
+    pub status_callback: Option<StatusCallback>,
+
+    /// Any unknown parameters that we did not capture above.
+    /// NOTE: Twilio might send some redundant fields that would show up in this map:
+    /// - `Caller` = `From`
+    /// - `CallerCity` = `FromCity`
+    /// - `CallerState` = `FromState`
+    /// - `CallerZip` = `FromZip`
+    /// - `CallerCountry` = `FromCountry`
+    /// - `Called` = `To`
+    /// - `CalledCity` = `ToCity`
+    /// - `CalledState` = `ToState`
+    /// - `CalledZip` = `ToZip`
+    /// - `CalledCountry` = `ToCountry`
+    #[serde(flatten)]
+    extra: HashMap<String, Value>,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        Digit,
-        errors::{DigitsError, Error},
-    };
+    use std::f32;
 
     use super::*;
+    use crate::{Digit, errors::DigitsError};
+    use serde_json::json;
+
+    // Base template with required Request fields
+    fn base_request_json_for_status_callback() -> serde_json::Value {
+        json!({
+            "CallSid": "CA123",
+            "AccountSid": "AC456",
+            "From": "+15551234",
+            "To": "+15554321",
+            "ApiVersion": "2023-12-31",
+            "Direction": "inbound",
+            "CallStatus": "completed"
+        })
+    }
 
     #[test]
     fn test_deserialize_and_serialize_request() {
@@ -234,10 +482,7 @@ mod tests {
         let digits = req.digits.expect("digits should be Some");
         assert!(digits.is_empty());
         assert_eq!(digits.to_string(), "");
-        assert!(matches!(
-            digits.to_int(),
-            Err(Error::Digits(DigitsError::Empty))
-        ));
+        assert!(matches!(digits.to_int(), Err(DigitsError::Empty)));
     }
 
     #[test]
@@ -314,5 +559,64 @@ mod tests {
             assert_eq!(digits.to_string(), digit_str);
             assert_eq!(digits.to_int().ok(), expected_int);
         }
+    }
+
+    #[test]
+    fn status_callback_with_mixed_number_formats() {
+        let mut json = base_request_json_for_status_callback();
+        json["Duration"] = json!(30); // Number
+        json["CallDuration"] = json!("45"); // String
+        json["CallbackSource"] = json!("test");
+
+        let req: Request = serde_json::from_value(json).unwrap();
+        let sc = req.status_callback.unwrap();
+
+        assert_eq!(sc.duration, Some(30));
+        assert_eq!(sc.call_duration, Some(45));
+        assert_eq!(sc.callback_source, Some("test".into()));
+    }
+
+    #[test]
+    fn no_status_callback_fields() {
+        let json = base_request_json_for_status_callback(); // No StatusCallback fields
+        let req: Request = serde_json::from_value(json).unwrap();
+
+        assert!(req.status_callback.is_none());
+        assert!(req.extra.is_empty()); // All fields accounted for
+    }
+
+    #[test]
+    fn partial_status_callback_fields() {
+        let mut json = base_request_json_for_status_callback();
+        json["SequenceNumber"] = json!("2");
+        json["SipResponseCode"] = json!(404);
+
+        let req: Request = serde_json::from_value(json).unwrap();
+        let sc = req.status_callback.unwrap();
+
+        assert_eq!(sc.sequence_number, Some(2));
+        assert_eq!(sc.sip_response_code, Some(404));
+        assert!(sc.duration.is_none());
+    }
+
+    #[test]
+    fn invalid_number_format() {
+        let mut json = base_request_json_for_status_callback();
+        json["Duration"] = json!("invalid");
+
+        let result: Result<Request, _> = serde_json::from_value(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn extra_fields() {
+        let mut json = base_request_json_for_status_callback();
+        json["UnknownField1"] = json!("some value");
+        json["UnknownField2"] = json!(f32::consts::PI);
+
+        let req: Request = serde_json::from_value(json).unwrap();
+        assert!(!req.extra.is_empty());
+        assert_eq!(req.extra["UnknownField1"], "some value");
+        assert_eq!(req.extra["UnknownField2"], f32::consts::PI);
     }
 }

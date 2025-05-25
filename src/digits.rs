@@ -1,4 +1,4 @@
-use crate::{Result, errors::DigitsError, twiml::GatherDigit};
+use crate::{errors::DigitsError, twiml::GatherDigit};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -31,7 +31,7 @@ impl Deref for Digits {
 
 impl Digits {
     pub fn empty() -> Self {
-        Digits(vec![])
+        Digits::default()
     }
 
     pub fn with_capacity(capacity: usize) -> Self {
@@ -74,14 +74,14 @@ impl Digits {
     }
 
     /// Return the integer value of the leading numeric digits if all non-numeric digits appear after all numeric digits; otherwise return None.
-    pub fn to_int(&self) -> Result<usize> {
+    pub fn to_int(&self) -> std::result::Result<usize, DigitsError> {
         if self.is_empty() {
-            return Err(DigitsError::Empty.into());
+            return Err(DigitsError::Empty);
         }
 
         // First digit must be numeric or a pause.
         if !(self.0[0].to_int().is_some() || self.0[0].is_pause()) {
-            return Err(DigitsError::FirstDigitNotNumeric.into());
+            return Err(DigitsError::FirstDigitNotNumeric);
         }
 
         // Convert only the numeric part to integer.
@@ -91,7 +91,7 @@ impl Digits {
         for digit in &self.0 {
             // Always treat sequence containing any alphabetic as non-numeric.
             if digit.is_alpha() {
-                return Err(DigitsError::ContainsAlphabetic.into());
+                return Err(DigitsError::ContainsAlphabetic);
             }
 
             // Ignore pauses.
@@ -106,12 +106,12 @@ impl Digits {
 
             // Found a digit after a non-digit.
             if found_non_digit {
-                return Err(DigitsError::NumericAfterNonNumeric.into());
+                return Err(DigitsError::NumericAfterNonNumeric);
             }
 
             // Check for potential overflow.
             if result > usize::MAX / 10 {
-                return Err(DigitsError::Overflow.into());
+                return Err(DigitsError::Overflow);
             }
 
             found_digit = true;
@@ -119,7 +119,7 @@ impl Digits {
         }
 
         if !found_digit {
-            return Err(DigitsError::NoNumeric.into());
+            return Err(DigitsError::NoNumeric);
         }
 
         Ok(result)
@@ -138,6 +138,7 @@ impl Digits {
     Hash,
     PartialOrd,
     Ord,
+    strum::EnumIter,
     strum::AsRefStr,
     strum::Display,
     Serialize,
@@ -258,6 +259,99 @@ impl From<GatherDigit> for Digit {
             GatherDigit::Star => Digit::Star,
             GatherDigit::Pound => Digit::Pound,
             GatherDigit::Empty => Digit::W,
+        }
+    }
+}
+
+impl TryFrom<u8> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: u8) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as usize)
+    }
+}
+
+impl TryFrom<u16> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: u16) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as usize)
+    }
+}
+
+impl TryFrom<u32> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: u32) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as usize)
+    }
+}
+
+impl TryFrom<i128> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: i128) -> std::result::Result<Self, Self::Error> {
+        if value < 0 {
+            return Err(DigitsError::NegativeNumber(value));
+        }
+        if value > 9 {
+            return Err(DigitsError::Overflow);
+        }
+        Digit::try_from(value as usize)
+    }
+}
+
+impl TryFrom<i64> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: i64) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i32> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: i32) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i16> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: i16) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as i128)
+    }
+}
+
+impl TryFrom<i8> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: i8) -> std::result::Result<Self, Self::Error> {
+        Digit::try_from(value as i128)
+    }
+}
+
+impl TryFrom<usize> for Digit {
+    type Error = DigitsError;
+
+    fn try_from(value: usize) -> std::result::Result<Self, Self::Error> {
+        if value > 9 {
+            return Err(DigitsError::Overflow);
+        }
+        match value {
+            0 => Ok(Digit::Zero),
+            1 => Ok(Digit::One),
+            2 => Ok(Digit::Two),
+            3 => Ok(Digit::Three),
+            4 => Ok(Digit::Four),
+            5 => Ok(Digit::Five),
+            6 => Ok(Digit::Six),
+            7 => Ok(Digit::Seven),
+            8 => Ok(Digit::Eight),
+            9 => Ok(Digit::Nine),
+            _ => unreachable!(),
         }
     }
 }

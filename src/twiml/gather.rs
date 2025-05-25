@@ -278,7 +278,7 @@ pub struct Gather {
     ///
     /// Documentation: https://www.twilio.com/docs/voice/twiml/gather#speechmodel
     #[serde(rename = "@speechModel")]
-    #[builder(default, setter(strip_option))]
+    #[builder(default)]
     pub speech_model: Option<SpeechModel>,
 
     /// The `speechTimeout` attribute specifies how long to wait after speech pauses before stopping recognition.
@@ -405,7 +405,19 @@ pub enum GatherVerb {
     Say(Say),
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Default,
+    strum::Display,
+    strum::EnumString,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+)]
+#[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum SpeechModel {
     #[default]
@@ -418,6 +430,7 @@ pub enum SpeechModel {
     Googlev2Short,
     Googlev2Telephony,
     Googlev2TelephonyShort,
+    #[strum(serialize = "deepgram_nova-2")]
     #[serde(rename = "deepgram_nova-2")]
     DeepgramNova2,
 }

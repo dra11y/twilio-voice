@@ -711,7 +711,7 @@ mod tests {
         let gather = Gather::builder()
             .action("/process_speech".to_string())
             .input(GatherInput::Speech)
-            .speech_model(SpeechModel::PhoneCall)
+            .speech_model(Some(SpeechModel::PhoneCall))
             .language(Language::EnUs)
             .say(
                 Say::builder()
