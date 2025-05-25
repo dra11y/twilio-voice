@@ -152,10 +152,9 @@ pub struct CallResource {
 #[cfg(test)]
 mod tests {
     use crate::twilio::AnsweredBy;
-
     const TEST_CALL_RESOURCE: &str = r#"
     {
-        "account_sid": "AC85b51c096162dbe331074f1abe07545e",
+        "account_sid": "AC0123456789abcdef0123456789abcdef",
         "annotation": "billingreferencetag1",
         "answered_by": "machine_start",
         "api_version": "2010-04-01",
@@ -170,28 +169,28 @@ mod tests {
         "from_formatted": "(234) 567-8901",
         "group_sid": null,
         "parent_call_sid": null,
-        "phone_number_sid": "PN0956adb6c72104b7a5df2c18fe613b41",
+        "phone_number_sid": "PN0123456789abcdef0123456789abcdef",
         "price": "-0.00850",
         "price_unit": "USD",
         "queue_time": "0",
-        "sid": "CAfce1a6c4d9c888b578f092c58b0f1708",
+        "sid": "CA0123456789abcdef0123456789abcdef",
         "start_time": "Sun, 25 May 2025 22:15:33 +0000",
         "status": "completed",
         "subresource_uris": {
-            "events": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Events.json",
-            "notifications": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Notifications.json",
-            "payments": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Payments.json",
-            "recordings": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Recordings.json",
-            "siprec": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Siprec.json",
-            "streams": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Streams.json",
-            "transcriptions": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/Transcriptions.json",
-            "user_defined_message_subscriptions": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessageSubscriptions.json",
-            "user_defined_messages": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708/UserDefinedMessages.json"
+            "events": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Events.json",
+            "notifications": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Notifications.json",
+            "payments": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Payments.json",
+            "recordings": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Recordings.json",
+            "siprec": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Siprec.json",
+            "streams": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Streams.json",
+            "transcriptions": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/Transcriptions.json",
+            "user_defined_message_subscriptions": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/UserDefinedMessageSubscriptions.json",
+            "user_defined_messages": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef/UserDefinedMessages.json"
         },
         "to": "+12345678900",
         "to_formatted": "(234) 567-8900",
         "trunk_sid": "",
-        "uri": "/2010-04-01/Accounts/AC85b51c096162dbe331074f1abe07545e/Calls/CAfce1a6c4d9c888b578f092c58b0f1708.json"
+        "uri": "/2010-04-01/Accounts/AC0123456789abcdef0123456789abcdef/Calls/CA0123456789abcdef0123456789abcdef.json"
     }
     "#;
 

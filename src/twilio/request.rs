@@ -9,6 +9,7 @@ use struct_field_names_as_array::FieldNamesAsSlice;
     Debug, Default, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
 )]
 #[serde(rename_all = "kebab-case")]
+#[strum(serialize_all = "kebab-case")]
 pub enum CallStatus {
     /// The call is ready and waiting in line before going out.
     Queued,
