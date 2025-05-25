@@ -1,8 +1,11 @@
 #![allow(non_upper_case_globals)]
 
-use crate::twiml::{
-    Gender, VoiceGender, VoicePrice,
-    voices::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
+use crate::{
+    PriceType,
+    twiml::{
+        Gender, VoiceGender, VoicePrice,
+        voices::{GENERATIVE_VOICE_PRICE, NEURAL_VOICE_PRICE, STANDARD_VOICE_PRICE},
+    },
 };
 
 use serde::{Deserialize, Serialize};
@@ -12,43 +15,6 @@ pub mod generative {
 
     pub mod google {
         use super::*;
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.kn-IN-Chirp3-HD-Aoede")]
-            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Aoede")]
-            Chirp3HdAoede,
-            #[serde(rename = "Google.kn-IN-Chirp3-HD-Kore")]
-            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Kore")]
-            Chirp3HdKore,
-            #[serde(rename = "Google.kn-IN-Chirp3-HD-Leda")]
-            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Leda")]
-            Chirp3HdLeda,
-            #[serde(rename = "Google.kn-IN-Chirp3-HD-Zephyr")]
-            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Zephyr")]
-            Chirp3HdZephyr,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> Option<f32> {
-                Some(GENERATIVE_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Female {
-            fn gender(&self) -> Gender {
-                Gender::Female
-            }
-        }
-
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::KnIn(super::super::Voice::Generative(super::Voice::Google(
-                    Voice::Female(value),
-                )))
-            }
-        }
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
@@ -68,8 +34,8 @@ pub mod generative {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> Option<f32> {
-                Some(GENERATIVE_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(GENERATIVE_VOICE_PRICE)
             }
         }
 
@@ -87,24 +53,61 @@ pub mod generative {
             }
         }
 
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.kn-IN-Chirp3-HD-Aoede")]
+            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Aoede")]
+            Chirp3HdAoede,
+            #[serde(rename = "Google.kn-IN-Chirp3-HD-Kore")]
+            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Kore")]
+            Chirp3HdKore,
+            #[serde(rename = "Google.kn-IN-Chirp3-HD-Leda")]
+            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Leda")]
+            Chirp3HdLeda,
+            #[serde(rename = "Google.kn-IN-Chirp3-HD-Zephyr")]
+            #[strum(to_string = "Google.kn-IN-Chirp3-HD-Zephyr")]
+            Chirp3HdZephyr,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(GENERATIVE_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::KnIn(super::super::Voice::Generative(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
             Male(Male),
+            Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(GENERATIVE_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(GENERATIVE_VOICE_PRICE)
             }
         }
 
         impl VoiceGender for Voice {
             fn gender(&self) -> Gender {
                 match self {
-                    Voice::Female(_) => Gender::Female,
                     Voice::Male(_) => Gender::Male,
+                    Voice::Female(_) => Gender::Female,
                 }
             }
         }
@@ -117,8 +120,8 @@ pub mod generative {
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> Option<f32> {
-            Some(GENERATIVE_VOICE_PRICE)
+        fn price(&self) -> Option<PriceType> {
+            crate::price_type_from_f64_ok(GENERATIVE_VOICE_PRICE)
         }
     }
 
@@ -149,8 +152,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> Option<f32> {
-                Some(NEURAL_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -180,8 +183,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Female {
-            fn price(&self) -> Option<f32> {
-                Some(NEURAL_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -207,8 +210,8 @@ pub mod neural {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(NEURAL_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(NEURAL_VOICE_PRICE)
             }
         }
 
@@ -229,8 +232,8 @@ pub mod neural {
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> Option<f32> {
-            Some(NEURAL_VOICE_PRICE)
+        fn price(&self) -> Option<PriceType> {
+            crate::price_type_from_f64_ok(NEURAL_VOICE_PRICE)
         }
     }
 
@@ -251,37 +254,6 @@ pub mod standard {
 
         #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
         #[non_exhaustive]
-        pub enum Female {
-            #[serde(rename = "Google.kn-IN-Standard-A")]
-            #[strum(to_string = "Google.kn-IN-Standard-A")]
-            StandardA,
-            #[serde(rename = "Google.kn-IN-Standard-C")]
-            #[strum(to_string = "Google.kn-IN-Standard-C")]
-            StandardC,
-        }
-
-        impl VoicePrice for Female {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
-            }
-        }
-
-        impl VoiceGender for Female {
-            fn gender(&self) -> Gender {
-                Gender::Female
-            }
-        }
-
-        impl From<Female> for crate::twiml::Voice {
-            fn from(value: Female) -> Self {
-                Self::KnIn(super::super::Voice::Standard(super::Voice::Google(
-                    Voice::Female(value),
-                )))
-            }
-        }
-
-        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
-        #[non_exhaustive]
         pub enum Male {
             #[serde(rename = "Google.kn-IN-Standard-B")]
             #[strum(to_string = "Google.kn-IN-Standard-B")]
@@ -292,8 +264,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -311,24 +283,55 @@ pub mod standard {
             }
         }
 
+        #[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Serialize, Deserialize)]
+        #[non_exhaustive]
+        pub enum Female {
+            #[serde(rename = "Google.kn-IN-Standard-A")]
+            #[strum(to_string = "Google.kn-IN-Standard-A")]
+            StandardA,
+            #[serde(rename = "Google.kn-IN-Standard-C")]
+            #[strum(to_string = "Google.kn-IN-Standard-C")]
+            StandardC,
+        }
+
+        impl VoicePrice for Female {
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
+            }
+        }
+
+        impl VoiceGender for Female {
+            fn gender(&self) -> Gender {
+                Gender::Female
+            }
+        }
+
+        impl From<Female> for crate::twiml::Voice {
+            fn from(value: Female) -> Self {
+                Self::KnIn(super::super::Voice::Standard(super::Voice::Google(
+                    Voice::Female(value),
+                )))
+            }
+        }
+
         #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
         #[serde(untagged)]
         pub enum Voice {
-            Female(Female),
             Male(Male),
+            Female(Female),
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
             }
         }
 
         impl VoiceGender for Voice {
             fn gender(&self) -> Gender {
                 match self {
-                    Voice::Female(_) => Gender::Female,
                     Voice::Male(_) => Gender::Male,
+                    Voice::Female(_) => Gender::Female,
                 }
             }
         }
@@ -341,8 +344,8 @@ pub mod standard {
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> Option<f32> {
-            Some(STANDARD_VOICE_PRICE)
+        fn price(&self) -> Option<PriceType> {
+            crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
         }
     }
 
@@ -363,11 +366,11 @@ pub enum Voice {
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> Option<f32> {
+    fn price(&self) -> Option<PriceType> {
         match self {
-            Voice::Generative(_) => Some(GENERATIVE_VOICE_PRICE),
-            Voice::Neural(_) => Some(NEURAL_VOICE_PRICE),
-            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
+            Voice::Generative(_) => crate::price_type_from_f64_ok(GENERATIVE_VOICE_PRICE),
+            Voice::Neural(_) => crate::price_type_from_f64_ok(NEURAL_VOICE_PRICE),
+            Voice::Standard(_) => crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE),
         }
     }
 }

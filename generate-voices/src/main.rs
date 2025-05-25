@@ -1,3 +1,5 @@
+#![feature(exit_status_error)]
+
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Write as FmtWrite;
@@ -10,13 +12,24 @@ use convert_case::{Case, Casing};
 use headless_chrome::{Browser, LaunchOptions};
 use scraper::{Html, Selector};
 
+/// Just for the generator
+/// (Resolves to f64 or bigdecimal::BigDecimal in crate depending on "bigdecimal" feature flag.)
+type PriceType = f64;
+
 /// Entry point: fetches Twilio voice data and generates voice module files
 fn main() {
-    let result = fetch_and_generate_voice_modules();
-    match result {
-        Ok(_) => println!("Successfully generated voice modules!"),
-        Err(e) => eprintln!("Error generating voice modules: {e:?}"),
-    }
+    match fetch_and_generate_voice_modules() {
+        Ok(_) => println!("Successfully generated voice modules! Running tests..."),
+        Err(e) => panic!("Error generating voice modules: {e:?}"),
+    };
+    match Command::new("just").arg("test").current_dir("..").status() {
+        Ok(status) => {
+            if !status.success() {
+                panic!("Tests failed: {}", status);
+            }
+        }
+        Err(err) => panic!("Failed to run tests: {err:?}"),
+    };
 }
 
 /// Output directory for generated voice modules
@@ -54,7 +67,7 @@ fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
 }
 
 /// Extracts voice data and pricing information from Twilio's documentation HTML
-fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceData>) {
+fn parse_html_into_voices(html: String) -> (HashMap<String, PriceType>, HashSet<VoiceData>) {
     let document = Html::parse_document(&html);
     let row_selector = Selector::parse("table tbody tr").unwrap();
     let cell_selector = Selector::parse("td").unwrap();
@@ -97,7 +110,7 @@ fn parse_html_into_voices(html: String) -> (HashMap<String, f32>, HashSet<VoiceD
                 let price = price_text
                     .strip_prefix('$')
                     .expect("no text in expected price column")
-                    .parse::<f32>()
+                    .parse::<PriceType>()
                     .expect("failed to parse expected price");
 
                 // Navigate up to find the section ID to determine voice type (Standard/Neural/Generative)
@@ -210,7 +223,7 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
 
 /// Creates the directory structure and generates all voice module files
 fn generate_voice_module_structure(
-    pricing: HashMap<String, f32>,
+    pricing: HashMap<String, PriceType>,
     voices: &HashSet<VoiceData>,
 ) -> Result<(), Box<dyn Error>> {
     std::fs::create_dir_all(DIR_PATH)?;
@@ -314,7 +327,7 @@ fn generate_lang_file(
     writeln!(lang_file, "#![allow(non_upper_case_globals)]\n")?;
     writeln!(
         lang_file,
-        "use crate::twiml::{{Gender, VoiceGender, VoicePrice, voices::{{"
+        "use crate::{{PriceType, twiml::{{Gender, VoiceGender, VoicePrice, voices::{{"
     )?;
     for voice_type in type_groups.keys() {
         writeln!(
@@ -323,7 +336,7 @@ fn generate_lang_file(
             voice_type.to_case(Case::Constant)
         )?;
     }
-    writeln!(lang_file, "}},}};\n")?;
+    writeln!(lang_file, "}},}},}};\n")?;
     writeln!(lang_file, "use serde::{{Serialize, Deserialize}};\n")?;
 
     // Generate modules for each voice type (Standard, Neural, Generative)
@@ -493,7 +506,7 @@ fn generate_lang_file(
         price_arms.push((
             None,
             format!("Voice::{voice_type}(_)"),
-            format!("Some({voice_type_const}_VOICE_PRICE)"),
+            format!("crate::price_type_from_f64_ok({voice_type_const}_VOICE_PRICE)"),
         ));
         gender_arms.push((
             None,
@@ -516,7 +529,7 @@ fn generate_lang_file(
 
 /// Generates the main mod.rs file with language-specific modules and price constants
 fn generate_main_file(
-    pricing: HashMap<String, f32>,
+    pricing: HashMap<String, PriceType>,
     voices: &HashSet<VoiceData>,
 ) -> Result<HashMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
     let now = chrono::Utc::now().format("%Y-%m-%d %H:%I").to_string();
@@ -536,6 +549,7 @@ fn generate_main_file(
         "// Auto-generated at: {now}\n// Source: {TWILIO_DOC_URL}"
     )?;
     writeln!(main_file, "#![allow(non_local_definitions)]\n")?;
+    writeln!(main_file, "use crate::PriceType;\n")?;
 
     // Generate price constants for each voice type (Standard, Neural, Generative)
     for (voice_type, price_per_100_chars) in pricing {
@@ -545,7 +559,7 @@ fn generate_main_file(
         )?;
         writeln!(
             main_file,
-            "pub const {}_VOICE_PRICE: f32 = {price_per_100_chars};",
+            "pub const {}_VOICE_PRICE: f64 = {price_per_100_chars};",
             voice_type.to_case(Case::Constant)
         )?;
     }
@@ -570,7 +584,7 @@ fn generate_main_file(
         r#"
         pub trait VoicePrice {{
             /// Cost of the voice per 100 characters (rounded down per call)
-            fn price(&self) -> Option<f32>;
+            fn price(&self) -> Option<PriceType>;
         }}
     "#
     )?;
@@ -670,7 +684,11 @@ fn generate_main_file(
     let mut gender_arms = Vec::new();
 
     for gender in ["Man", "Woman"] {
-        price_arms.push((None, format!("Voice::{gender}"), "Some(0.)".to_string()));
+        price_arms.push((
+            None,
+            format!("Voice::{gender}"),
+            "crate::price_type_from_f64_ok(0.)".to_string(),
+        ));
         gender_arms.push((
             None,
             format!("Voice::{gender}"),
@@ -743,7 +761,7 @@ fn write_voice_price_impl(
     match_arms: Option<&[(Option<String>, String, String)]>,
 ) -> Result<(), Box<dyn Error>> {
     writeln!(output, "    impl VoicePrice for {type_name} {{")?;
-    writeln!(output, "        fn price(&self) -> Option<f32> {{")?;
+    writeln!(output, "        fn price(&self) -> Option<PriceType> {{")?;
 
     if let Some(arms) = match_arms {
         writeln!(output, "            match self {{")?;
@@ -760,7 +778,7 @@ fn write_voice_price_impl(
     } else {
         writeln!(
             output,
-            "            Some({}_VOICE_PRICE)",
+            "            crate::price_type_from_f64_ok({}_VOICE_PRICE)",
             voice_type.unwrap().to_case(Case::Constant)
         )?;
     }

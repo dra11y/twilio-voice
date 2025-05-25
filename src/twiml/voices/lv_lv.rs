@@ -1,6 +1,9 @@
 #![allow(non_upper_case_globals)]
 
-use crate::twiml::{Gender, VoiceGender, VoicePrice, voices::STANDARD_VOICE_PRICE};
+use crate::{
+    PriceType,
+    twiml::{Gender, VoiceGender, VoicePrice, voices::STANDARD_VOICE_PRICE},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -19,8 +22,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Male {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -45,8 +48,8 @@ pub mod standard {
         }
 
         impl VoicePrice for Voice {
-            fn price(&self) -> Option<f32> {
-                Some(STANDARD_VOICE_PRICE)
+            fn price(&self) -> Option<PriceType> {
+                crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
             }
         }
 
@@ -66,8 +69,8 @@ pub mod standard {
     }
 
     impl VoicePrice for Voice {
-        fn price(&self) -> Option<f32> {
-            Some(STANDARD_VOICE_PRICE)
+        fn price(&self) -> Option<PriceType> {
+            crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE)
         }
     }
 
@@ -86,9 +89,9 @@ pub enum Voice {
     Standard(standard::Voice),
 }
 impl VoicePrice for Voice {
-    fn price(&self) -> Option<f32> {
+    fn price(&self) -> Option<PriceType> {
         match self {
-            Voice::Standard(_) => Some(STANDARD_VOICE_PRICE),
+            Voice::Standard(_) => crate::price_type_from_f64_ok(STANDARD_VOICE_PRICE),
         }
     }
 }

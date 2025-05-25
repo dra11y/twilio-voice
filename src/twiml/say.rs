@@ -9,6 +9,8 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use typed_builder::TypedBuilder;
 
+use crate::PriceType;
+
 use super::{Language, Voice, VoicePrice};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -139,9 +141,9 @@ impl<A, B, C> SayBuilder<(A, B, C, (Ssml,))> {
 }
 
 impl VoicePrice for Say {
-    fn price(&self) -> Option<f32> {
-        self.voice
-            .and_then(|v| v.price())
-            .map(|p| p * (self.text().len() / 100) as f32)
+    fn price(&self) -> Option<PriceType> {
+        let price = self.voice.and_then(|v| v.price())?;
+        let qty = crate::price_type_from_f64_ok(self.text().len().div_ceil(100) as f64)?;
+        Some(price * qty)
     }
 }

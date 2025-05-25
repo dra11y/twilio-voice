@@ -18,7 +18,9 @@ pub use voices::{Gender, Language, Voice, VoiceGender, VoicePrice};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, strum::Display, Default, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
+)]
 pub enum Method {
     GET,
     #[default]

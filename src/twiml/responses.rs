@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::errors::Error;
+use crate::{PriceType, errors::Error};
 
 use super::{Gather, Play, Redirect, Say, VoicePrice};
 use quick_xml::escape::{escape, unescape};
@@ -123,7 +123,7 @@ impl Response {
 }
 
 impl VoicePrice for Response {
-    fn price(&self) -> Option<f32> {
+    fn price(&self) -> Option<PriceType> {
         self.verbs
             .iter()
             .filter_map(|v| match v {
@@ -513,8 +513,9 @@ mod tests {
             r#"<Response><Say language="en-US" voice="Google.en-US-Neural2-A" loop="1">{text}</Say></Response>"#
         );
         let response: Response = xml.parse().unwrap();
-        let blocks = text.len() / 100;
-        let expected_price = NEURAL_VOICE_PRICE * blocks as f32;
+        let blocks = text.len().div_ceil(100);
+        let expected_price = NEURAL_VOICE_PRICE * blocks as f64;
+        let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
         assert_eq!(response.price(), Some(expected_price));
         let ResponseVerb::Say(say) = &response.verbs[0] else {
             panic!("Expected Say verb");
@@ -576,8 +577,10 @@ mod tests {
                 speech_timeout = speech_timeout.0,
             );
             let response: Response = xml.parse().unwrap();
-            let blocks = text.len() / 100;
-            let expected_price = NEURAL_VOICE_PRICE * blocks as f32;
+            let blocks = text.len().div_ceil(100);
+            let expected_price = NEURAL_VOICE_PRICE * blocks as f64;
+            let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
+
             assert_eq!(response.price(), Some(expected_price));
             let ResponseVerb::Gather(gather) = &response.verbs[0] else {
                 panic!("Expected Gather verb");
@@ -623,9 +626,11 @@ mod tests {
         );
 
         // Calculate correct pricing based on text length
-        let welcome_blocks = (welcome_text.len() / 100) as f32;
-        let selection_blocks = (selection_text.len() / 100) as f32;
+        let welcome_blocks = (welcome_text.len().div_ceil(100)) as f64;
+        let selection_blocks = (selection_text.len().div_ceil(100)) as f64;
         let expected_price = STANDARD_VOICE_PRICE * (welcome_blocks + selection_blocks);
+        let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
+
         assert_eq!(resp.price(), Some(expected_price));
     }
 
@@ -679,9 +684,11 @@ mod tests {
         assert!(xml.contains(r#"numDigits="2""#));
 
         // Calculate correct pricing based on text length
-        let account_blocks = (account_text.len() / 100) as f32;
-        let pound_blocks = (pound_text.len() / 100) as f32;
+        let account_blocks = (account_text.len().div_ceil(100)) as f64;
+        let pound_blocks = (pound_text.len().div_ceil(100)) as f64;
         let expected_price = NEURAL_VOICE_PRICE * (account_blocks + pound_blocks);
+        let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
+
         assert_eq!(resp.price(), Some(expected_price));
     }
 
@@ -727,8 +734,10 @@ mod tests {
         assert!(xml.contains(r#"speechModel="phone_call""#));
 
         // Calculate correct pricing for generative voice
-        let speech_blocks = (speech_text.len() / 100) as f32;
+        let speech_blocks = (speech_text.len().div_ceil(100)) as f64;
         let expected_price = GENERATIVE_VOICE_PRICE * speech_blocks;
+        let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
+
         assert_eq!(resp.price(), Some(expected_price));
     }
 
@@ -806,10 +815,13 @@ mod tests {
         let menu_text_blocks =
             "Welcome to Acme Corporation. Press 1 for sales, 2 for support, or 3 for billing."
                 .len()
-                / 100;
-        let fallback_text_blocks =
-            "We didn't receive any input. Please call back later.".len() / 100;
-        let expected_price = NEURAL_VOICE_PRICE * (menu_text_blocks + fallback_text_blocks) as f32;
+                .div_ceil(100);
+        let fallback_text_blocks = "We didn't receive any input. Please call back later."
+            .len()
+            .div_ceil(100);
+        let expected_price = NEURAL_VOICE_PRICE * (menu_text_blocks + fallback_text_blocks) as f64;
+        let expected_price = crate::price_type_from_f64_ok(expected_price).unwrap();
+
         assert_eq!(resp.price(), Some(expected_price));
     }
 }

@@ -1,12 +1,13 @@
-use std::collections::HashMap;
-
+use super::deserialize_opt_usize;
+use crate::Digits;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
+use std::collections::HashMap;
 use struct_field_names_as_array::FieldNamesAsSlice;
 
-use crate::Digits;
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Default, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
+)]
 #[serde(rename_all = "kebab-case")]
 pub enum CallStatus {
     /// The call is ready and waiting in line before going out.
@@ -47,24 +48,12 @@ pub enum Direction {
 
     /// calls initiated by a <Dial> verb
     OutboundDial,
-}
 
-fn deserialize_opt_usize<'de, D>(deserializer: D) -> Result<Option<usize>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum StringOrInt {
-        Str(String),
-        Int(usize),
-    }
+    /// if using Elastic SIP Trunking, outgoing calls from your communications infrastructure to the PSTN
+    TrunkingTerminating,
 
-    match Option::<StringOrInt>::deserialize(deserializer)? {
-        Some(StringOrInt::Str(s)) => s.parse().map(Some).map_err(serde::de::Error::custom),
-        Some(StringOrInt::Int(i)) => Ok(Some(i)),
-        None => Ok(None),
-    }
+    /// if using Elastic SIP Trunking, incoming calls to your communications infrastructure from the PSTN
+    TrunkingOriginating,
 }
 
 fn deserialize_status_callback<'de, D>(deserializer: D) -> Result<Option<StatusCallback>, D::Error>
@@ -369,13 +358,11 @@ pub struct Request {
     /// - `CalledZip` = `ToZip`
     /// - `CalledCountry` = `ToCountry`
     #[serde(flatten, deserialize_with = "deserialize_extra")]
-    extra: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 #[cfg(test)]
 mod tests {
-    use std::f32;
-
     use super::*;
     use crate::{Digit, errors::DigitsError};
     use serde_json::json;
@@ -650,11 +637,11 @@ mod tests {
     fn extra_fields() {
         let mut json = base_request_json_for_status_callback();
         json["UnknownField1"] = json!("some value");
-        json["UnknownField2"] = json!(f32::consts::PI);
+        json["UnknownField2"] = json!(std::f64::consts::PI);
 
         let req: Request = serde_json::from_value(json).unwrap();
         assert!(!req.extra.is_empty());
         assert_eq!(req.extra["UnknownField1"], "some value");
-        assert_eq!(req.extra["UnknownField2"], f32::consts::PI);
+        assert_eq!(req.extra["UnknownField2"], std::f64::consts::PI);
     }
 }

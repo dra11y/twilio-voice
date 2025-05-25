@@ -1,6 +1,8 @@
 use serde::{Deserialize, Deserializer, Serialize, de};
 use typed_builder::TypedBuilder;
 
+use crate::PriceType;
+
 use super::{Language, Method, Pause, Play, Say, VoicePrice};
 
 #[derive(
@@ -323,7 +325,7 @@ pub struct Gather {
 }
 
 impl VoicePrice for Gather {
-    fn price(&self) -> Option<f32> {
+    fn price(&self) -> Option<PriceType> {
         let says = self
             .verbs
             .iter()
