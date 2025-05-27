@@ -2,7 +2,7 @@ use super::deserialize_opt_usize;
 use crate::Digits;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use struct_field_names_as_array::FieldNamesAsSlice;
 
 #[derive(
@@ -362,11 +362,60 @@ pub struct Request {
     pub extra: HashMap<String, Value>,
 }
 
+impl Request {
+    pub fn to_map(&self) -> crate::Result<BTreeMap<String, String>> {
+        let encoded = serde_urlencoded::to_string(self)?;
+        let pairs: Vec<(String, String)> = serde_urlencoded::from_str(&encoded)?;
+        Ok(pairs.into_iter().collect())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{Digit, errors::DigitsError};
     use serde_json::json;
+
+    #[test]
+    fn test_to_btreemap() {
+        let request = Request {
+            call_sid: "CA123".to_string(),
+            account_sid: "AC456".to_string(),
+            from: "+15551234".to_string(),
+            to: "+15554321".to_string(),
+            api_version: "2023-12-31".to_string(),
+            direction: Direction::Inbound,
+            call_status: CallStatus::Completed,
+            digits: Some("123#".parse().unwrap()),
+            ..Default::default()
+        };
+
+        let btreemap = request.to_map().expect("Failed to convert to BTreeMap");
+
+        let keys = btreemap.keys().cloned().collect::<Vec<_>>();
+        assert_eq!(
+            keys,
+            &[
+                "AccountSid",
+                "ApiVersion",
+                "CallSid",
+                "CallStatus",
+                "Digits",
+                "Direction",
+                "From",
+                "To"
+            ]
+        );
+
+        assert_eq!(btreemap.get("CallSid"), Some(&"CA123".to_string()));
+        assert_eq!(btreemap.get("AccountSid"), Some(&"AC456".to_string()));
+        assert_eq!(btreemap.get("From"), Some(&"+15551234".to_string()));
+        assert_eq!(btreemap.get("To"), Some(&"+15554321".to_string()));
+        assert_eq!(btreemap.get("ApiVersion"), Some(&"2023-12-31".to_string()));
+        assert_eq!(btreemap.get("Direction"), Some(&"inbound".to_string()));
+        assert_eq!(btreemap.get("CallStatus"), Some(&"completed".to_string()));
+        assert_eq!(btreemap.get("Digits"), Some(&"123#".to_string()));
+    }
 
     // Base template with required Request fields
     fn base_request_json_for_status_callback() -> serde_json::Value {

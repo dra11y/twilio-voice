@@ -14,6 +14,10 @@ pub enum Error {
     Digits(#[from] DigitsError),
     #[error("Response deserialization error: {0}, raw xml: {1}")]
     ResponseDeser(String, String),
+    #[error("serde_urlencoded serialization error: {0}")]
+    SerdeUrlEncode(#[from] serde_urlencoded::ser::Error),
+    #[error("serde_urlencoded deserialization error: {0}")]
+    SerdeUrlDecode(#[from] serde_urlencoded::de::Error),
 }
 
 #[derive(Debug, thiserror::Error, Clone, Copy, PartialEq, Eq, Hash)]
