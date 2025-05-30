@@ -270,9 +270,12 @@ pub fn validate_request(
     .flat_map(|v| [without_trailing_slash(&v), v])
     .collect::<HashSet<_>>();
 
+    let mut tried = vec![];
+
     let valid = variants.iter().any(|variant_url| {
         let valid = validate_signature_with_url(auth_token, twilio_sig, variant_url, params);
         if valid {
+            tried.push(variant_url.clone());
             println!("Twilio request validated with: {variant_url}");
         }
         valid
