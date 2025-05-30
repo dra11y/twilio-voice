@@ -296,7 +296,13 @@ pub fn validate_request(
 /// * `true` if the body is valid, `false` otherwise
 pub fn validate_body(body: &str, body_hash: &str) -> bool {
     let expected_hash = get_expected_body_hash(body);
-    constant_time_compare(body_hash, &expected_hash)
+    let valid = constant_time_compare(body_hash, &expected_hash);
+    if !valid {
+        eprintln!(
+            "Body validation failed: expected hash {expected_hash}, got {body_hash}\nbody:\n{body}",
+        );
+    }
+    valid
 }
 
 /// Validate a request with a JSON body
