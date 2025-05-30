@@ -246,6 +246,8 @@ pub fn validate_request(
     params: &HashMap<String, String>,
     test_both_protocols: bool,
 ) -> bool {
+    println!("Validating Twilio request from: {url}");
+
     // Check signature of the url with and without the port number
     // and with and without the legacy querystring (special chars are encoded when using `new URL()`)
     // since signature generation on the back end is inconsistent.
@@ -268,9 +270,20 @@ pub fn validate_request(
     .flat_map(|v| [without_trailing_slash(&v), v])
     .collect::<HashSet<_>>();
 
-    variants.iter().any(|variant_url| {
-        validate_signature_with_url(auth_token, twilio_header, variant_url, params)
-    })
+    let valid = variants.iter().any(|variant_url| {
+        let valid = validate_signature_with_url(auth_token, twilio_header, variant_url, params);
+        if valid {
+            println!("Twilio request validated with: {variant_url}");
+        }
+        valid
+    });
+    if !valid {
+        eprintln!(
+            "Twilio request validation failed with token ending in: {}",
+            &auth_token[auth_token.len() - 4..]
+        );
+    }
+    valid
 }
 
 /// Validate the body of a request against a body hash
@@ -380,8 +393,6 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         }
         url
     };
-
-    println!("webhook_url: {webhook_url}");
 
     let is_valid = if webhook_url.contains("bodySHA256") {
         validate_request_with_body(
