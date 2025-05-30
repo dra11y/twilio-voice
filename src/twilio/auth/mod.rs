@@ -124,12 +124,12 @@ fn with_https(url: &str, https: bool) -> String {
 /// Validate a signature with a specific URL format
 fn validate_signature_with_url(
     auth_token: &str,
-    twilio_header: &str,
+    twilio_sig: &str,
     url: &str,
     params: &HashMap<String, String>,
 ) -> bool {
     let expected_sig = get_expected_twilio_signature(auth_token, url, params);
-    constant_time_compare(twilio_header, &expected_sig)
+    constant_time_compare(twilio_sig, &expected_sig)
 }
 
 /// Constant time comparison of two strings (to prevent timing attacks)
@@ -233,7 +233,7 @@ fn without_trailing_slash(url: &str) -> String {
 ///
 /// # Arguments
 /// * `auth_token` - The auth token, as seen in the Twilio portal
-/// * `twilio_header` - The value of the X-Twilio-Signature header from the request
+/// * `twilio_sig` - The value of the X-Twilio-Signature header from the request
 /// * `url` - The full URL (with query string) you configured to handle this request
 /// * `params` - The parameters sent with this request
 ///
@@ -241,7 +241,7 @@ fn without_trailing_slash(url: &str) -> String {
 /// * `true` if the request is valid, `false` otherwise
 pub fn validate_request(
     auth_token: &str,
-    twilio_header: &str,
+    twilio_sig: &str,
     url: &str,
     params: &HashMap<String, String>,
     test_both_protocols: bool,
@@ -271,7 +271,7 @@ pub fn validate_request(
     .collect::<HashSet<_>>();
 
     let valid = variants.iter().any(|variant_url| {
-        let valid = validate_signature_with_url(auth_token, twilio_header, variant_url, params);
+        let valid = validate_signature_with_url(auth_token, twilio_sig, variant_url, params);
         if valid {
             println!("Twilio request validated with: {variant_url}");
         }
@@ -279,7 +279,7 @@ pub fn validate_request(
     });
     if !valid {
         eprintln!(
-            "Twilio request validation failed with token ending in: {}",
+            "Twilio request validation failed with token ending in: {}, sig: {twilio_sig}",
             &auth_token[auth_token.len() - 4..]
         );
     }
@@ -309,7 +309,7 @@ pub fn validate_body(body: &str, body_hash: &str) -> bool {
 ///
 /// # Arguments
 /// * `auth_token` - The auth token, as seen in the Twilio portal
-/// * `twilio_header` - The value of the X-Twilio-Signature header from the request
+/// * `twilio_sig` - The value of the X-Twilio-Signature header from the request
 /// * `url` - The full URL (with query string) you configured to handle this request
 /// * `body` - The body of the request
 ///
@@ -317,7 +317,7 @@ pub fn validate_body(body: &str, body_hash: &str) -> bool {
 /// * `true` if the request is valid, `false` otherwise
 pub fn validate_request_with_body(
     auth_token: &str,
-    twilio_header: &str,
+    twilio_sig: &str,
     url: &str,
     body: &str,
     test_both_protocols: bool,
@@ -333,7 +333,7 @@ pub fn validate_request_with_body(
 
     validate_request(
         auth_token,
-        twilio_header,
+        twilio_sig,
         url,
         &empty_params,
         test_both_protocols,
