@@ -82,6 +82,7 @@ where
                 .unwrap_or_default()
                 .to_bytes();
 
+            println!("original_uri: {original_uri}");
             // Create a TwilioRequest implementation
             let twilio_request = TwilioRequestImpl {
                 original_uri,
