@@ -147,7 +147,9 @@ fn validate_signature_with_url(
     url: &str,
     params: &HashMap<String, String>,
 ) -> bool {
+    debug!("validate_signature_with_url: {url}, params: {params:?}");
     let expected_sig = get_expected_twilio_signature(auth_token, url, params);
+    debug!("expected_sig: {expected_sig}, for url: {url}");
     constant_time_compare(twilio_sig, &expected_sig)
 }
 
