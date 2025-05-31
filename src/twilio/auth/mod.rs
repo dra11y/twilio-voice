@@ -272,6 +272,7 @@ pub fn validate_request(
 
     let mut tried = vec![];
 
+    println!("Trying variants: {variants:?}");
     let valid = variants.iter().any(|variant_url| {
         let valid = validate_signature_with_url(auth_token, twilio_sig, variant_url, params);
         if valid {
