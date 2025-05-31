@@ -372,11 +372,11 @@ pub fn validate_incoming_request<T: TwilioRequest>(
 ) -> bool {
     let options = opts.unwrap_or_default();
 
-    #[cfg(debug_assertions)]
+    // #[cfg(debug_assertions)]
     let validated_with: &str;
 
     let webhook_url = if let Some(url) = options.url {
-        #[cfg(debug_assertions)]
+        // #[cfg(debug_assertions)]
         {
             validated_with = "custom URL option";
         }
@@ -394,7 +394,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         });
 
         let url = format!("{}://{}{}", protocol, host, request.path_and_query());
-        #[cfg(debug_assertions)]
+        // #[cfg(debug_assertions)]
         {
             validated_with = match (custom_protocol, custom_host) {
                 (true, true) => "custom protocol and host",
