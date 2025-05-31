@@ -306,7 +306,7 @@ pub fn validate_request(
             &auth_token[auth_token.len() - 4..]
         );
     }
-    valid
+    valid || !options.enforce
 }
 
 /// Validate the body of a request against a body hash
@@ -355,7 +355,7 @@ pub fn validate_request_with_body(
         .unwrap_or_default();
 
     validate_request(auth_token, twilio_sig, url, &empty_params, options)
-        && validate_body(body, &body_hash)
+        && (validate_body(body, &body_hash) || !options.enforce)
 }
 
 /// Implement on a [`Request`] object for validation.
@@ -453,7 +453,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         }
     }
 
-    is_valid
+    is_valid || !options.enforce
 }
 
 #[cfg(test)]
