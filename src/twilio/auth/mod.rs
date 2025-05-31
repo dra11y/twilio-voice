@@ -282,7 +282,7 @@ pub fn validate_request(
     });
     if !valid {
         eprintln!(
-            "Twilio request validation failed with token ending in: {}, sig: {twilio_sig}",
+            "Twilio request validation failed with token ending in: {}, sig: {twilio_sig}\ntried urls: {tried:?}",
             &auth_token[auth_token.len() - 4..]
         );
     }
