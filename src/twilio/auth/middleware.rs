@@ -1,12 +1,7 @@
-use axum::{
-    body::Body,
-    extract::Request,
-    http::{StatusCode, request::Parts},
-    response::Response,
-};
+use axum::{body::Body, extract::Request, http::StatusCode, response::Response};
 use bytes::Bytes;
 use futures_util::future::BoxFuture;
-use http::Uri;
+use http::{Method, Uri, request::Parts};
 use http_body_util::BodyExt;
 use std::collections::HashMap;
 use std::task::{Context, Poll};
@@ -175,5 +170,9 @@ impl TwilioRequest for TwilioRequestImpl {
 
     fn raw_body(&self) -> Option<String> {
         std::str::from_utf8(&self.body_bytes).ok().map(String::from)
+    }
+
+    fn method(&self) -> Method {
+        self.parts.method.clone()
     }
 }

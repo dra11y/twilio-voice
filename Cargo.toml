@@ -52,6 +52,7 @@ default = ["en"]
 axum = ["dep:axum"]
 bigdecimal = ["dep:bigdecimal"]
 middleware = [
+    "axum",
     "dep:bytes",
     "dep:futures-util",
     "dep:http",

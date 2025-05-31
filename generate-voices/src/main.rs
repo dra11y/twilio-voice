@@ -1,5 +1,3 @@
-#![feature(exit_status_error)]
-
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Write as FmtWrite;

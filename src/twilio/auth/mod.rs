@@ -3,6 +3,7 @@ pub mod middleware;
 
 use base64::{Engine as _, engine::general_purpose};
 use hmac::{Hmac, Mac};
+use http::Method;
 use regex::{Regex, RegexBuilder};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
@@ -346,6 +347,7 @@ pub fn validate_request_with_body(
 
 /// Implement on a [`Request`] object for validation.
 pub trait TwilioRequest {
+    fn method(&self) -> Method;
     fn protocol(&self) -> String;
     fn host(&self) -> String;
     fn path_and_query(&self) -> String;
@@ -441,6 +443,7 @@ mod tests {
     struct MockRequest {
         protocol: String,
         host: String,
+        method: Method,
         path_and_query: String,
         signature: Option<String>,
         body: HashMap<String, String>,
@@ -470,6 +473,10 @@ mod tests {
 
         fn raw_body(&self) -> Option<String> {
             self.raw_body.clone()
+        }
+
+        fn method(&self) -> Method {
+            self.method.clone()
         }
     }
 
@@ -875,6 +882,7 @@ mod tests {
 
         let request = MockRequest {
             protocol: "https".to_string(),
+            method: Method::POST,
             host: "example.com".to_string(),
             path_and_query: "/myapp.php?foo=1&bar=2".to_string(),
             signature: Some(expected_signature.clone()),
@@ -895,6 +903,7 @@ mod tests {
             signature: None,
             body: params.clone(),
             raw_body: None,
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_no_sig,
@@ -910,6 +919,7 @@ mod tests {
             signature: Some(expected_signature.clone()),
             body: params.clone(),
             raw_body: None,
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_wrong_host,
@@ -925,6 +935,7 @@ mod tests {
             signature: Some(expected_signature.clone()),
             body: params.clone(),
             raw_body: None,
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_wrong_protocol,
@@ -940,6 +951,7 @@ mod tests {
             signature: Some(expected_signature),
             body: params.clone(),
             raw_body: None,
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_wrong_url,
@@ -1162,6 +1174,7 @@ mod tests {
             signature: Some(expected_signature.clone()),
             body: HashMap::new(),
             raw_body: Some(body.to_string()),
+            method: Method::POST,
         };
 
         // Test success case
@@ -1177,6 +1190,7 @@ mod tests {
             signature: Some(expected_signature.clone()),
             body: HashMap::new(),
             raw_body: None, // No body
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_no_body,
@@ -1193,6 +1207,7 @@ mod tests {
             signature: Some(expected_signature.clone()),
             body: HashMap::new(),
             raw_body: Some(modified_body), // Modified body
+            method: Method::POST,
         };
         assert!(!validate_incoming_request(
             &request_mod_body,
@@ -1213,6 +1228,7 @@ mod tests {
             signature: Some(wrong_signature.to_string()),
             body: HashMap::new(),
             raw_body: Some(body.to_string()),
+            method: Method::POST,
         };
 
         assert!(!validate_incoming_request(
@@ -1240,6 +1256,7 @@ mod tests {
             signature: None,                      // We'll set this later
             body: params.clone(),
             raw_body: None,
+            method: Method::POST,
         };
 
         // The URL that was actually configured in Twilio webhook
