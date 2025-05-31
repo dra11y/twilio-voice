@@ -149,7 +149,7 @@ fn validate_signature_with_url(
 ) -> bool {
     debug!("validate_signature_with_url: {url}, params: {params:?}");
     let expected_sig = get_expected_twilio_signature(auth_token, url, params);
-    debug!("expected_sig: {expected_sig}, for url: {url}");
+    debug!("expected_sig: {expected_sig}, twilio_sig: {twilio_sig}, for url: {url}");
     constant_time_compare(twilio_sig, &expected_sig)
 }
 
@@ -296,9 +296,9 @@ pub fn validate_request(
     debug!("Trying variants: {variants:?}");
     let valid = variants.iter().any(|variant_url| {
         let valid = validate_signature_with_url(auth_token, twilio_sig, variant_url, params);
-        if valid {
+        if !valid {
             tried.push(variant_url.clone());
-            debug!("Twilio request validated with: {variant_url}");
+            debug!("Twilio request failed to validate with: {variant_url}");
         }
         valid
     });
@@ -589,6 +589,14 @@ mod tests {
                 "should never be valid, because our backend should never strip an existing trailing slash from the request"
             );
         }
+    }
+
+    #[test]
+    fn test_url_without_params() {
+        assert_eq!(
+            url_with_default_port_strip_auth("https://user2:password65432@example.com/?", true),
+            "https://example.com:443/?"
+        );
     }
 
     #[test]
