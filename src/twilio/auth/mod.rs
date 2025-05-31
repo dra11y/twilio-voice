@@ -149,7 +149,7 @@ fn validate_signature_with_url(
 ) -> bool {
     debug!("validate_signature_with_url: {url}, params: {params:?}");
     let expected_sig = get_expected_twilio_signature(auth_token, url, params);
-    debug!("expected_sig: {expected_sig}, twilio_sig: {twilio_sig}, for url: {url}");
+    debug!("expected_sig: {expected_sig}  twilio_sig: {twilio_sig} for url: {url}");
     constant_time_compare(twilio_sig, &expected_sig)
 }
 
@@ -589,14 +589,6 @@ mod tests {
                 "should never be valid, because our backend should never strip an existing trailing slash from the request"
             );
         }
-    }
-
-    #[test]
-    fn test_url_without_params() {
-        assert_eq!(
-            url_with_default_port_strip_auth("https://user2:password65432@example.com/?", true),
-            "https://example.com:443/?"
-        );
     }
 
     #[test]

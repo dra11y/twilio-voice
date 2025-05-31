@@ -82,7 +82,12 @@ where
                 .unwrap_or_default()
                 .to_bytes();
 
-            println!("original_uri: {original_uri}");
+            let body_text = String::from_utf8_lossy(&body_bytes);
+
+            println!(
+                "original_uri: {original_uri}, params: {:?} \n{body_text}",
+                parts.uri.query()
+            );
             // Create a TwilioRequest implementation
             let twilio_request = TwilioRequestImpl {
                 original_uri,
