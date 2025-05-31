@@ -424,11 +424,12 @@ pub fn validate_incoming_request<T: TwilioRequest>(
         )
     };
 
-    #[cfg(debug_assertions)]
+    // #[cfg(debug_assertions)]
+    let method = request.method();
     if !is_valid {
-        println!("INVALID URL: {webhook_url}, validated with {validated_with}");
+        println!("INVALID URL: {method} {webhook_url}, validated with {validated_with}");
     } else {
-        println!("Valid URL: {webhook_url}");
+        println!("Valid URL: {method} {webhook_url}");
     }
 
     is_valid

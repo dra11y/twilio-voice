@@ -91,12 +91,6 @@ where
 
             // Validate the request
 
-            println!(
-                "Validating Twilio Signature: METHOD: {}, URL: {} ...",
-                twilio_request.method(),
-                twilio_request.original_uri
-            );
-
             let is_valid = super::validate_incoming_request(&twilio_request, &auth_token, options);
 
             if !is_valid {
