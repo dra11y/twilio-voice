@@ -13,21 +13,21 @@ use super::TwilioRequest;
 #[derive(Clone)]
 pub struct TwilioLayer {
     auth_token: String,
-    options: Option<super::RequestValidatorOptions>,
+    options: super::RequestValidatorOptions,
 }
 
 impl TwilioLayer {
     pub fn new(auth_token: &str) -> Self {
         Self {
             auth_token: auth_token.to_string(),
-            options: None,
+            options: Default::default(),
         }
     }
 
     pub fn with_options(auth_token: &str, options: super::RequestValidatorOptions) -> Self {
         Self {
             auth_token: auth_token.to_string(),
-            options: Some(options),
+            options,
         }
     }
 }
@@ -48,7 +48,7 @@ impl<S> Layer<S> for TwilioLayer {
 pub struct TwilioMiddleware<S> {
     inner: S,
     auth_token: String,
-    options: Option<super::RequestValidatorOptions>,
+    options: super::RequestValidatorOptions,
 }
 
 impl<S> Service<Request> for TwilioMiddleware<S>

@@ -11,13 +11,18 @@ use std::{
     collections::{HashMap, HashSet},
     sync::LazyLock,
 };
+use tracing::{debug, warn};
 use url::Url;
 
 type HmacSha1 = Hmac<Sha1>;
 
 /// Options for validating an incoming request
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Clone)]
 pub struct RequestValidatorOptions {
+    /// Enforce validation (if `false`, logs failure but does not block the request)
+    pub enforce: bool,
+    /// Enable debug logging
+    pub debug: bool,
     /// The full URL (with query string) you used to configure the webhook with Twilio - overrides host/protocol options
     pub url: Option<String>,
     /// Manually specify the host name used by Twilio in a number's webhook config
@@ -26,6 +31,19 @@ pub struct RequestValidatorOptions {
     pub protocol: Option<String>,
     /// Test both http and https protocol URLs
     pub test_both_protocols: bool,
+}
+
+impl Default for RequestValidatorOptions {
+    fn default() -> Self {
+        Self {
+            enforce: true,
+            debug: false,
+            url: None,
+            host: None,
+            protocol: Some("https".to_string()),
+            test_both_protocols: false,
+        }
+    }
 }
 
 /// Get the expected Twilio signature for a given request
@@ -75,7 +93,7 @@ pub fn get_expected_twilio_signature(
     // TODO: debugging option
     // #[cfg(debug_assertions)]
     // {
-    //     println!("Signature: {signature}, URL: {url}");
+    //     debug!("Signature: {signature}, URL: {url}");
     // }
 
     #[allow(clippy::let_and_return)]
@@ -245,9 +263,9 @@ pub fn validate_request(
     twilio_sig: &str,
     url: &str,
     params: &HashMap<String, String>,
-    test_both_protocols: bool,
+    options: &RequestValidatorOptions,
 ) -> bool {
-    println!("Validating Twilio request from: {url}");
+    debug!("Validating Twilio request from: {url}");
 
     // Check signature of the url with and without the port number
     // and with and without the legacy querystring (special chars are encoded when using `new URL()`)
@@ -261,7 +279,7 @@ pub fn validate_request(
     ]
     .iter()
     .flat_map(|v| {
-        if test_both_protocols {
+        if options.test_both_protocols {
             vec![with_https(v, false), with_https(v, true)]
         } else {
             vec![v.clone()]
@@ -273,17 +291,17 @@ pub fn validate_request(
 
     let mut tried = vec![];
 
-    println!("Trying variants: {variants:?}");
+    debug!("Trying variants: {variants:?}");
     let valid = variants.iter().any(|variant_url| {
         let valid = validate_signature_with_url(auth_token, twilio_sig, variant_url, params);
         if valid {
             tried.push(variant_url.clone());
-            println!("Twilio request validated with: {variant_url}");
+            debug!("Twilio request validated with: {variant_url}");
         }
         valid
     });
     if !valid {
-        eprintln!(
+        warn!(
             "Twilio request validation failed with token ending in: {}, sig: {twilio_sig}\ntried urls: {tried:?}",
             &auth_token[auth_token.len() - 4..]
         );
@@ -303,7 +321,7 @@ pub fn validate_body(body: &str, body_hash: &str) -> bool {
     let expected_hash = get_expected_body_hash(body);
     let valid = constant_time_compare(body_hash, &expected_hash);
     if !valid {
-        eprintln!(
+        warn!(
             "Body validation failed: expected hash {expected_hash}, got {body_hash}\nbody:\n{body}",
         );
     }
@@ -325,7 +343,7 @@ pub fn validate_request_with_body(
     twilio_sig: &str,
     url: &str,
     body: &str,
-    test_both_protocols: bool,
+    options: &RequestValidatorOptions,
 ) -> bool {
     let empty_params = HashMap::new();
     let url_object = Url::parse(url).expect("Invalid URL");
@@ -336,13 +354,8 @@ pub fn validate_request_with_body(
         .map(|(_, value)| value.to_string())
         .unwrap_or_default();
 
-    validate_request(
-        auth_token,
-        twilio_sig,
-        url,
-        &empty_params,
-        test_both_protocols,
-    ) && validate_body(body, &body_hash)
+    validate_request(auth_token, twilio_sig, url, &empty_params, options)
+        && validate_body(body, &body_hash)
 }
 
 /// Implement on a [`Request`] object for validation.
@@ -368,33 +381,39 @@ pub trait TwilioRequest {
 pub fn validate_incoming_request<T: TwilioRequest>(
     request: &T,
     auth_token: &str,
-    opts: Option<RequestValidatorOptions>,
+    options: RequestValidatorOptions,
 ) -> bool {
-    let options = opts.unwrap_or_default();
-
-    // #[cfg(debug_assertions)]
+    #[cfg(debug_assertions)]
     let validated_with: &str;
 
-    let webhook_url = if let Some(url) = options.url {
-        // #[cfg(debug_assertions)]
+    let webhook_url = if let Some(url) = &options.url {
+        #[cfg(debug_assertions)]
         {
             validated_with = "custom URL option";
         }
-        url
+        url.clone()
     } else {
         let mut custom_protocol = true;
-        let protocol = options.protocol.unwrap_or_else(|| {
-            custom_protocol = false;
-            request.protocol()
-        });
+        let protocol = options
+            .protocol
+            .as_deref()
+            .map(ToString::to_string)
+            .unwrap_or_else(|| {
+                custom_protocol = false;
+                request.protocol()
+            });
         let mut custom_host = true;
-        let host = options.host.unwrap_or_else(|| {
-            custom_host = false;
-            request.host()
-        });
+        let host = options
+            .host
+            .as_deref()
+            .map(ToString::to_string)
+            .unwrap_or_else(|| {
+                custom_host = false;
+                request.host()
+            });
 
         let url = format!("{}://{}{}", protocol, host, request.path_and_query());
-        // #[cfg(debug_assertions)]
+        #[cfg(debug_assertions)]
         {
             validated_with = match (custom_protocol, custom_host) {
                 (true, true) => "custom protocol and host",
@@ -412,7 +431,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
             &request.twilio_signature().unwrap_or_default(),
             &webhook_url,
             &request.raw_body().unwrap_or_default(),
-            options.test_both_protocols,
+            &options,
         )
     } else {
         validate_request(
@@ -420,16 +439,18 @@ pub fn validate_incoming_request<T: TwilioRequest>(
             &request.twilio_signature().unwrap_or_default(),
             &webhook_url,
             &request.body(),
-            options.test_both_protocols,
+            &options,
         )
     };
 
-    // #[cfg(debug_assertions)]
-    let method = request.method();
-    if !is_valid {
-        println!("INVALID URL: {method} {webhook_url}, validated with {validated_with}");
-    } else {
-        println!("Valid URL: {method} {webhook_url}");
+    #[cfg(debug_assertions)]
+    {
+        let method = request.method();
+        if !is_valid {
+            debug!("INVALID URL: {method} {webhook_url}, validated with {validated_with}");
+        } else {
+            debug!("Valid URL: {method} {webhook_url}");
+        }
     }
 
     is_valid
@@ -531,7 +552,7 @@ mod tests {
                     &signature_for_url_with_slash,
                     url_with_slash,
                     &params,
-                    false
+                    &Default::default()
                 ),
                 "trailing slash in Twilio console webhook URL, and trailing slash received on our backend"
             );
@@ -541,7 +562,7 @@ mod tests {
                     &signature_for_url_without_slash,
                     url_without_slash,
                     &params,
-                    false
+                    &Default::default()
                 ),
                 "no trailing slash in Twilio console webhook URL, and no trailing slash received on our backend"
             );
@@ -551,7 +572,7 @@ mod tests {
                     &signature_for_url_without_slash,
                     url_with_slash,
                     &params,
-                    false
+                    &Default::default()
                 ),
                 "no trailing slash in Twilio console webhook URL, but received trailing slash on our backend - redirect or root URL without path"
             );
@@ -561,7 +582,7 @@ mod tests {
                     &signature_for_url_with_slash,
                     url_without_slash,
                     &params,
-                    false
+                    &Default::default()
                 ),
                 "should never be valid, because our backend should never strip an existing trailing slash from the request"
             );
@@ -663,13 +684,13 @@ mod tests {
             iterations,
         );
 
-        println!("Constant time results (nanoseconds):");
-        println!("  Warmup:       {warmup:?}");
-        println!("  Same:         {time_same:?}");
-        println!("  Diff first:   {time_diff_first:?}");
-        println!("  Diff middle:  {time_diff_middle:?}");
-        println!("  Diff last:    {time_diff_last:?}");
-        println!("  Diff length:  {time_diff_diff_len:?}");
+        debug!("Constant time results (nanoseconds):");
+        debug!("  Warmup:       {warmup:?}");
+        debug!("  Same:         {time_same:?}");
+        debug!("  Diff first:   {time_diff_first:?}");
+        debug!("  Diff middle:  {time_diff_middle:?}");
+        debug!("  Diff last:    {time_diff_last:?}");
+        debug!("  Diff length:  {time_diff_diff_len:?}");
 
         // Check variance - constant time should have similar timing
         let timings = [
@@ -683,7 +704,7 @@ mod tests {
         let min_time = timings.iter().min().unwrap();
         let variance = max_time.saturating_sub(*min_time);
 
-        println!("  Variance:     {variance:?}");
+        debug!("  Variance:     {variance:?}");
 
         // For constant time, we expect the variance to be minimal
         // This is a heuristic test - actual threshold depends on hardware
@@ -739,7 +760,7 @@ mod tests {
             &expected_signature,
             url,
             &params,
-            false
+            &Default::default()
         ));
 
         // Test failure cases
@@ -750,7 +771,7 @@ mod tests {
             &expected_signature,
             url,
             &params,
-            false
+            &Default::default()
         ));
 
         // 2. Tampered signature - force a completely different signature
@@ -760,7 +781,7 @@ mod tests {
             tampered_signature,
             url,
             &params,
-            false
+            &Default::default()
         ));
 
         // 3. Modified URL
@@ -769,7 +790,7 @@ mod tests {
             &expected_signature,
             "https://example.com/myapp.php?foo=1&bar=3", // changed query param
             &params,
-            false
+            &Default::default()
         ));
 
         // 4. Modified params
@@ -780,7 +801,7 @@ mod tests {
             &expected_signature,
             url,
             &tampered_params,
-            false
+            &Default::default()
         ));
 
         // 5. Additional param
@@ -791,7 +812,7 @@ mod tests {
             &expected_signature,
             url,
             &extended_params,
-            false
+            &Default::default()
         ));
 
         // 6. Missing param
@@ -802,7 +823,7 @@ mod tests {
             &expected_signature,
             url,
             &reduced_params,
-            false
+            &Default::default()
         ));
     }
 
@@ -822,7 +843,7 @@ mod tests {
             &expected_signature,
             &url,
             body,
-            false
+            &Default::default()
         ));
 
         // Test failure cases
@@ -833,7 +854,7 @@ mod tests {
             &expected_signature,
             &url,
             body,
-            false
+            &Default::default()
         ));
 
         // 2. Tampered signature - completely different signature
@@ -843,7 +864,7 @@ mod tests {
             tampered_signature,
             &url,
             body,
-            false
+            &Default::default()
         ));
 
         // 3. Modified body
@@ -853,7 +874,7 @@ mod tests {
             &expected_signature,
             &url,
             &modified_body,
-            false
+            &Default::default()
         ));
 
         // 4. Modified URL (but keeping the same hash)
@@ -863,7 +884,7 @@ mod tests {
             &expected_signature,
             &modified_url,
             body,
-            false
+            &Default::default()
         ));
     }
 
@@ -892,7 +913,11 @@ mod tests {
         };
 
         // Test success case
-        assert!(validate_incoming_request(&request, auth_token, None));
+        assert!(validate_incoming_request(
+            &request,
+            auth_token,
+            Default::default()
+        ));
 
         // Test failure cases
 
@@ -909,7 +934,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_no_sig,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 2. Wrong host
@@ -925,7 +950,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_wrong_host,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 3. Wrong protocol
@@ -941,7 +966,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_wrong_protocol,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 4. Wrong URL
@@ -957,14 +982,14 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_wrong_url,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 5. Wrong auth token
         assert!(!validate_incoming_request(
             &request,
             "wrong_auth_token",
-            None
+            Default::default()
         ));
     }
 
@@ -977,7 +1002,11 @@ mod tests {
         let url = "https://example.com/path?q=a+b&r=c%20d&s=e%2Bf";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
         assert!(validate_request(
-            auth_token, &signature, url, &params, false
+            auth_token,
+            &signature,
+            url,
+            &params,
+            &Default::default()
         ));
     }
 
@@ -1000,7 +1029,7 @@ mod tests {
                 &signature_without_auth,
                 &url_with_auth,
                 &params,
-                false
+                &Default::default()
             ),
             "Twilio always strips auth from the URL"
         );
@@ -1016,7 +1045,7 @@ mod tests {
                 &signature_with_auth,
                 &url_without_auth,
                 &params,
-                false
+                &Default::default()
             ),
             "our algorithm should strip auth as well"
         );
@@ -1046,7 +1075,7 @@ mod tests {
             "",
             "not-a-url",
             &params,
-            false
+            &Default::default()
         ));
 
         // Extremely long auth token
@@ -1056,7 +1085,7 @@ mod tests {
             "",
             "https://example.com",
             &params,
-            false
+            &Default::default()
         ));
 
         // Null bytes in signature (security test)
@@ -1066,7 +1095,7 @@ mod tests {
             null_byte_sig,
             "https://example.com",
             &params,
-            false
+            &Default::default()
         ));
     }
 
@@ -1102,10 +1131,34 @@ mod tests {
         );
 
         // All signatures should validate the original URL
-        assert!(validate_request(auth_token, &sig1, url, &params, false));
-        assert!(validate_request(auth_token, &sig2, url, &params, false));
-        assert!(validate_request(auth_token, &sig3, url, &params, false));
-        assert!(validate_request(auth_token, &sig4, url, &params, false));
+        assert!(validate_request(
+            auth_token,
+            &sig1,
+            url,
+            &params,
+            &Default::default()
+        ));
+        assert!(validate_request(
+            auth_token,
+            &sig2,
+            url,
+            &params,
+            &Default::default()
+        ));
+        assert!(validate_request(
+            auth_token,
+            &sig3,
+            url,
+            &params,
+            &Default::default()
+        ));
+        assert!(validate_request(
+            auth_token,
+            &sig4,
+            url,
+            &params,
+            &Default::default()
+        ));
     }
 
     #[test]
@@ -1121,7 +1174,11 @@ mod tests {
         let url = "https://example.com";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
         assert!(validate_request(
-            auth_token, &signature, url, &params, false
+            auth_token,
+            &signature,
+            url,
+            &params,
+            &Default::default()
         ));
     }
 
@@ -1140,7 +1197,11 @@ mod tests {
 
         let signature = get_expected_twilio_signature(auth_token, url, &params);
         assert!(validate_request(
-            auth_token, &signature, url, &params, false
+            auth_token,
+            &signature,
+            url,
+            &params,
+            &Default::default()
         ));
     }
 
@@ -1153,7 +1214,11 @@ mod tests {
         let url = "https://example.com/unicode";
         let signature = get_expected_twilio_signature(auth_token, url, &params);
         assert!(validate_request(
-            auth_token, &signature, url, &params, false
+            auth_token,
+            &signature,
+            url,
+            &params,
+            &Default::default()
         ));
     }
 
@@ -1179,7 +1244,11 @@ mod tests {
         };
 
         // Test success case
-        assert!(validate_incoming_request(&request, auth_token, None));
+        assert!(validate_incoming_request(
+            &request,
+            auth_token,
+            Default::default()
+        ));
 
         // Test failure cases
 
@@ -1196,7 +1265,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_no_body,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 2. Modified body
@@ -1213,7 +1282,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_mod_body,
             auth_token,
-            None
+            Default::default()
         ));
 
         // 3. Wrong signature - use a completely different signature instead of trying to modify
@@ -1235,7 +1304,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_wrong_sig,
             auth_token,
-            None
+            Default::default()
         ));
     }
 
@@ -1277,11 +1346,12 @@ mod tests {
             host: None,
             protocol: None,
             test_both_protocols: false,
+            ..Default::default()
         };
         assert!(validate_incoming_request(
             &request_with_sig,
             auth_token,
-            Some(url_option)
+            url_option
         ));
 
         // 2. Validate with host/port options
@@ -1290,11 +1360,12 @@ mod tests {
             host: Some("custom.com".to_string()),
             protocol: Some("https".to_string()),
             test_both_protocols: false,
+            ..Default::default()
         };
         assert!(validate_incoming_request(
             &request_with_sig,
             auth_token,
-            Some(host_port_option)
+            host_port_option
         ));
 
         // Test failure cases
@@ -1303,7 +1374,7 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_with_sig,
             auth_token,
-            None,
+            Default::default()
         ));
 
         // 2. Wrong URL in options
@@ -1312,11 +1383,12 @@ mod tests {
             host: None,
             protocol: None,
             test_both_protocols: false,
+            ..Default::default()
         };
         assert!(!validate_incoming_request(
             &request_with_sig,
             auth_token,
-            Some(wrong_options)
+            wrong_options
         ));
     }
 
@@ -1405,14 +1477,14 @@ mod tests {
             &sig_without_port,
             url_without_port,
             &params,
-            false,
+            &Default::default(),
         ));
         assert!(validate_request(
             auth_token,
             &sig_with_port,
             url_with_port,
             &params,
-            false,
+            &Default::default(),
         ));
 
         // Cross-validation tests - validation should pass with various combinations
@@ -1422,14 +1494,14 @@ mod tests {
             &sig_with_port,
             url_without_port,
             &params,
-            false,
+            &Default::default(),
         ));
         assert!(validate_request(
             auth_token,
             &sig_without_port,
             url_with_port,
             &params,
-            false,
+            &Default::default(),
         ));
     }
 
@@ -1459,14 +1531,14 @@ mod tests {
             &signature,
             url_standard,
             &params,
-            false,
+            &Default::default(),
         ));
         assert!(validate_request(
             auth_token,
             &signature,
             url_encoded,
             &params,
-            false,
+            &Default::default(),
         ));
 
         // And signature generated with the encoded URL should also validate against both URLs
@@ -1476,14 +1548,14 @@ mod tests {
             &signature_encoded,
             url_standard,
             &params,
-            false,
+            &Default::default(),
         ));
         assert!(validate_request(
             auth_token,
             &signature_encoded,
             url_encoded,
             &params,
-            false,
+            &Default::default(),
         ));
     }
 }
