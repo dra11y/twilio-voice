@@ -164,39 +164,45 @@ pub struct StatusCallback {
 /// - `C`: it doesn't meet the requirements of A or B including international calls.
 ///
 /// https://www.twilio.com/docs/voice/trusted-calling-with-shakenstir
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum StirVerstat {
     // Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
     // Attestation level `A`
     #[serde(rename = "TN-Validation-Passed-A")]
+    #[strum(rename = "TN-Validation-Passed-A")]
     TnValidationPassedA,
 
     /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
     /// Attestation level `B`
     #[serde(rename = "TN-Validation-Passed-B")]
+    #[strum(rename = "TN-Validation-Passed-B")]
     TnValidationPassedB,
 
     /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
     /// Attestation level `C`
     #[serde(rename = "TN-Validation-Passed-C")]
+    #[strum(rename = "TN-Validation-Passed-C")]
     TnValidationPassedC,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
     /// Attestation level `A`
     #[serde(rename = "TN-Validation-Failed-A")]
+    #[strum(rename = "TN-Validation-Failed-A")]
     TnValidationFailedA,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
     /// Attestation level `B`
     #[serde(rename = "TN-Validation-Failed-B")]
+    #[strum(rename = "TN-Validation-Failed-B")]
     TnValidationFailedB,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
     /// Attestation level `C`
     #[serde(rename = "TN-Validation-Failed-C")]
+    #[strum(rename = "TN-Validation-Failed-C")]
     TnValidationFailedC,
 
     /// Possible causes:
@@ -207,47 +213,56 @@ pub enum StirVerstat {
     /// - SHAKEN PASSporT `dest` field doesn't match with the actual destination of the call in the SIP Request-URI.
     /// - SHAKEN PASSporT `iat` field is too old - more than 1 minutes from current timestamp or the SIP Date header value.
     #[serde(rename = "No-TN-Validation")]
+    #[strum(rename = "No-TN-Validation")]
     NoTnValidation,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the originating service provider from the Certificate Authority.
     /// No attestation level determined.    #[serde(rename = "TN-Validation-Failed")]
+    #[serde(rename = "TN-Validation-Failed")]
+    #[strum(rename = "TN-Validation-Failed")]
     TnValidationFailed,
 
     /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
     /// This verifies that no one tampered with the SIP INVITE during transit.
     /// Attestation level `A`
     #[serde(rename = "TN-Validation-Passed-A-Diverted")]
+    #[strum(rename = "TN-Validation-Passed-A-Diverted")]
     TnValidationPassedADiverted,
 
     /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
     /// This verifies that no one tampered with the SIP INVITE during transit.
     /// Attestation level `B`
     #[serde(rename = "TN-Validation-Passed-B-Diverted")]
+    #[strum(rename = "TN-Validation-Passed-B-Diverted")]
     TnValidationPassedBDiverted,
 
     /// Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the Diverting service provider from the Certificate Authority that signed the call.
     /// This verifies that no one tampered with the SIP INVITE during transit.
     /// Attestation level `C`
     #[serde(rename = "TN-Validation-Passed-C-Diverted")]
+    #[strum(rename = "TN-Validation-Passed-C-Diverted")]
     TnValidationPassedCDiverted,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
     /// Attestation level `A`
     #[serde(rename = "TN-Validation-Failed-A-Diverted")]
+    #[strum(rename = "TN-Validation-Failed-A-Diverted")]
     TnValidationFailedADiverted,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
     /// Attestation level `B`
     #[serde(rename = "TN-Validation-Failed-B-Diverted")]
+    #[strum(rename = "TN-Validation-Failed-B-Diverted")]
     TnValidationFailedBDiverted,
 
     /// Twilio was unable to verify the contents of the SHAKEN PASSporT.
     /// This could mean tampering or that Twilio could not retrieve the public certificate of the Diverting service provider from the Certificate Authority.
     /// Attestation level `C`
     #[serde(rename = "TN-Validation-Failed-C-Diverted")]
+    #[strum(rename = "TN-Validation-Failed-C-Diverted")]
     TnValidationFailedCDiverted,
 }
 
