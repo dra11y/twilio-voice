@@ -5,6 +5,18 @@ use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use struct_field_names_as_array::FieldNamesAsSlice;
 
+#[derive(Debug, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum InputType {
+    /// `speech_result` and `digits` are `None` or empty (trimmed)
+    None,
+    /// `speech_result` is `Some` and `digits` is `None` or empty (trimmed)
+    Speech,
+    /// `digits` is `Some` and `speech_result` is `None` or empty (trimmed)
+    Digits,
+    /// Unknown if this is possible in Twilio webhooks: both `digits` and `speech_result` are `Some`
+    BothSpeechAndDigits,
+}
+
 #[derive(
     Debug, Default, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
 )]
@@ -360,18 +372,6 @@ pub struct Request {
     /// - `CalledCountry` = `ToCountry`
     #[serde(flatten, deserialize_with = "deserialize_extra")]
     pub extra: HashMap<String, Value>,
-}
-
-#[derive(Debug, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum InputType {
-    /// `speech_result` and `digits` are `None` or empty (trimmed)
-    None,
-    /// `speech_result` is `Some` and `digits` is `None` or empty (trimmed)
-    Speech,
-    /// `digits` is `Some` and `speech_result` is `None` or empty (trimmed)
-    Digits,
-    /// Unknown if this is possible in Twilio webhooks: both `digits` and `speech_result` are `Some`
-    BothSpeechAndDigits,
 }
 
 impl Request {
