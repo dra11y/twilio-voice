@@ -362,7 +362,40 @@ pub struct Request {
     pub extra: HashMap<String, Value>,
 }
 
+#[derive(Debug, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum InputType {
+    /// `speech_result` and `digits` are `None` or empty (trimmed)
+    None,
+    /// `speech_result` is `Some` and `digits` is `None` or empty (trimmed)
+    Speech,
+    /// `digits` is `Some` and `speech_result` is `None` or empty (trimmed)
+    Digits,
+    /// Unknown if this is possible in Twilio webhooks: both `digits` and `speech_result` are `Some`
+    BothSpeechAndDigits,
+}
+
 impl Request {
+    /// `speech_result` is `Some` and not empty (trimmed)
+    pub fn has_speech_result(&self) -> bool {
+        self.speech_result
+            .as_ref()
+            .is_some_and(|s| !s.trim().is_empty())
+    }
+
+    /// `digits` is `Some` and not empty
+    pub fn has_digits(&self) -> bool {
+        self.digits.as_ref().is_some_and(|d| !d.is_empty())
+    }
+
+    pub fn input_type(&self) -> InputType {
+        match (self.has_speech_result(), self.has_digits()) {
+            (true, true) => InputType::BothSpeechAndDigits,
+            (true, false) => InputType::Speech,
+            (false, true) => InputType::Digits,
+            (false, false) => InputType::None,
+        }
+    }
+
     pub fn to_map(&self) -> crate::Result<BTreeMap<String, String>> {
         let encoded = serde_urlencoded::to_string(self)?;
         let pairs: Vec<(String, String)> = serde_urlencoded::from_str(&encoded)?;
