@@ -28,6 +28,8 @@ pub struct RequestValidatorOptions {
     /// Manually specify the host name used by Twilio in a number's webhook config
     pub host: Option<String>,
     /// Manually specify the protocol used by Twilio in a number's webhook config
+    /// Default: `Some("https")` because it's never recommended for the webhook URL to be non-secure, and firewalls are common.
+    /// If `None`, will generate the expected token based on the request protocol.
     pub protocol: Option<String>,
     /// Test both http and https protocol URLs
     pub test_both_protocols: bool,
@@ -968,7 +970,10 @@ mod tests {
         assert!(!validate_incoming_request(
             &request_wrong_protocol,
             auth_token,
-            Default::default()
+            RequestValidatorOptions {
+                protocol: None,
+                ..Default::default()
+            }
         ));
 
         // 4. Wrong URL

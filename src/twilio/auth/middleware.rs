@@ -82,8 +82,6 @@ where
                 .unwrap_or_default()
                 .to_bytes();
 
-            let body_text = String::from_utf8_lossy(&body_bytes);
-
             // Create a TwilioRequest implementation
             let twilio_request = TwilioRequestImpl {
                 original_uri,
