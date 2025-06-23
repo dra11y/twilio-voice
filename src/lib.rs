@@ -1,5 +1,7 @@
+pub mod client;
+
 pub mod errors;
-pub use errors::{Error, Result};
+pub use errors::{Result, TwilioError};
 
 pub mod digits;
 pub use digits::{Digit, Digits};

@@ -5,7 +5,18 @@ use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 use struct_field_names_as_array::FieldNamesAsSlice;
 
-#[derive(Debug, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    strum::Display,
+    strum::EnumString,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub enum InputType {
     /// `speech_result` and `digits` are `None` or empty (trimmed)
     None,
@@ -18,7 +29,17 @@ pub enum InputType {
 }
 
 #[derive(
-    Debug, Default, Clone, strum::Display, Copy, PartialEq, Eq, Hash, Serialize, Deserialize,
+    Debug,
+    Default,
+    Clone,
+    strum::Display,
+    strum::EnumString,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
 )]
 #[serde(rename_all = "kebab-case")]
 #[strum(serialize_all = "kebab-case")]
@@ -49,8 +70,21 @@ pub enum CallStatus {
     Canceled,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Default,
+    Clone,
+    strum::Display,
+    strum::EnumString,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 #[serde(rename_all = "kebab-case")]
+#[strum(serialize_all = "kebab-case")]
 pub enum Direction {
     /// inbound calls
     #[default]
@@ -164,7 +198,18 @@ pub struct StatusCallback {
 /// - `C`: it doesn't meet the requirements of A or B including international calls.
 ///
 /// https://www.twilio.com/docs/voice/trusted-calling-with-shakenstir
-#[derive(Debug, Clone, Copy, strum::Display, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    strum::Display,
+    strum::EnumString,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub enum StirVerstat {
     // Twilio received the SIP INVITE, with a SHAKEN PASSporT, and was able to fetch the public certificate of the originating service provider from the Certificate Authority that signed the call to verify that no one tampered with the SIP INVITE during transit.
     // Attestation level `A`

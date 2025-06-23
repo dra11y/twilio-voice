@@ -1,4 +1,4 @@
-pub use crate::errors::{DigitsError, Error};
+pub use crate::errors::{DigitsError, TwilioError};
 
 mod auth;
 pub use auth::*;

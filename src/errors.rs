@@ -1,9 +1,7 @@
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = std::result::Result<T, TwilioError>;
 
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error("unknown")]
-    Unknown,
+pub enum TwilioError {
     #[error("env var: {0}")]
     EnvVar(#[from] std::env::VarError),
     #[error("I/O: {0}")]
