@@ -19,12 +19,12 @@ pub struct Calls {
 
 impl Calls {
     pub async fn create(&self, call: &OutboundCall) -> TwilioClientResult<Call> {
-        let opts = [
+        let opts = &[
             ("To", &*call.to),
             ("From", &*call.from),
             ("Url", &*call.url),
         ];
-        self.client.send_request(Method::POST, "Calls", &opts).await
+        self.client.send_request(Method::POST, "Calls", opts).await
     }
 }
 

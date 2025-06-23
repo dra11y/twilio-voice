@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{PriceType, errors::Error};
+use crate::{PriceType, TwilioError};
 
 use super::{Gather, Play, Redirect, Say, VoicePrice};
 use quick_xml::escape::{escape, unescape};
@@ -39,12 +39,12 @@ impl Display for Response {
 }
 
 impl FromStr for Response {
-    type Err = Error;
+    type Err = TwilioError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let escaped = escape_say(s);
         serde_xml_rs::from_str(&escaped)
-            .map_err(|e| Error::ResponseDeser(e.to_string(), s.to_string()))
+            .map_err(|e| TwilioError::ResponseDeser(e.to_string(), s.to_string()))
     }
 }
 
