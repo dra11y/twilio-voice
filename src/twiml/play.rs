@@ -11,20 +11,9 @@ pub struct Play {
     #[builder(default = 1)]
     pub loop_count: u32,
     #[serde(rename = "@digits")]
-    #[builder(default)]
+    #[builder(default, setter(strip_option))]
     pub digits: Option<Digits>,
+    #[builder(default, setter(strip_option))]
     #[serde(rename = "#text")]
-    pub url: String,
-}
-
-impl From<&str> for Play {
-    fn from(value: &str) -> Self {
-        Play::builder().url(value.into()).build()
-    }
-}
-
-impl From<String> for Play {
-    fn from(value: String) -> Self {
-        Play::from(value.as_str())
-    }
+    pub url: Option<String>,
 }

@@ -2,7 +2,7 @@ use super::deserialize_opt_usize;
 use crate::Digits;
 use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use struct_field_names_as_array::FieldNamesAsSlice;
 
 #[derive(
@@ -125,13 +125,13 @@ where
         .map_err(serde::de::Error::custom)
 }
 
-fn deserialize_extra<'de, D>(deserializer: D) -> Result<HashMap<String, Value>, D::Error>
+fn deserialize_extra<'de, D>(deserializer: D) -> Result<BTreeMap<String, Value>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let mut value = Value::deserialize(deserializer)?;
     let Some(obj) = value.as_object_mut() else {
-        return Ok(HashMap::new());
+        return Ok(BTreeMap::new());
     };
 
     for field in StatusCallback::FIELD_NAMES_AS_SLICE {
@@ -141,7 +141,7 @@ where
     let map = obj
         .iter()
         .map(|(k, v)| (k.clone(), v.clone()))
-        .collect::<HashMap<String, Value>>();
+        .collect::<BTreeMap<String, Value>>();
 
     Ok(map)
 }
@@ -431,7 +431,7 @@ pub struct Request {
     /// - `CalledZip` = `ToZip`
     /// - `CalledCountry` = `ToCountry`
     #[serde(flatten, deserialize_with = "deserialize_extra")]
-    pub extra: HashMap<String, Value>,
+    pub extra: BTreeMap<String, Value>,
 }
 
 impl Request {

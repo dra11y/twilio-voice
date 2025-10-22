@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use std::error::Error;
 use std::fmt::Write as FmtWrite;
 use std::fs::File;
@@ -65,13 +65,13 @@ fn fetch_and_generate_voice_modules() -> Result<(), Box<dyn Error>> {
 }
 
 /// Extracts voice data and pricing information from Twilio's documentation HTML
-fn parse_html_into_voices(html: String) -> (HashMap<String, PriceType>, HashSet<VoiceData>) {
+fn parse_html_into_voices(html: String) -> (BTreeMap<String, PriceType>, HashSet<VoiceData>) {
     let document = Html::parse_document(&html);
     let row_selector = Selector::parse("table tbody tr").unwrap();
     let cell_selector = Selector::parse("td").unwrap();
 
     // Extract pricing information from the HTML
-    let mut pricing = HashMap::new();
+    let mut pricing = BTreeMap::new();
 
     // Process pricing tables
     let table_selector = Selector::parse("table").unwrap();
@@ -221,7 +221,7 @@ fn fetch_html() -> Result<String, Box<dyn Error>> {
 
 /// Creates the directory structure and generates all voice module files
 fn generate_voice_module_structure(
-    pricing: HashMap<String, PriceType>,
+    pricing: BTreeMap<String, PriceType>,
     voices: &HashSet<VoiceData>,
 ) -> Result<(), Box<dyn Error>> {
     std::fs::create_dir_all(DIR_PATH)?;
@@ -240,7 +240,7 @@ fn generate_voice_module_structure(
 // /// Generates gender alias convenience modules
 // fn generate_gender_aliases(
 //     lang_file: &mut String,
-//     type_groups: &HashMap<String, Vec<&VoiceData>>,
+//     type_groups: &BTreeMap<String, Vec<&VoiceData>>,
 // ) -> Result<(), Box<dyn Error>> {
 //     // Collect all genders first
 //     let mut all_genders = HashSet::new();
@@ -350,7 +350,7 @@ fn generate_lang_file(
             let provider_module = provider.to_case(Case::Snake);
 
             // Group voices by gender for this provider
-            let mut gender_maps: HashMap<&str, HashMap<String, String>> = HashMap::new();
+            let mut gender_maps: BTreeMap<&str, BTreeMap<String, String>> = BTreeMap::new();
 
             for voice in voices_by_provider {
                 let variant_name = extract_short_name(&voice.voice_name);
@@ -527,14 +527,14 @@ fn generate_lang_file(
 
 /// Generates the main mod.rs file with language-specific modules and price constants
 fn generate_main_file(
-    pricing: HashMap<String, PriceType>,
+    pricing: BTreeMap<String, PriceType>,
     voices: &HashSet<VoiceData>,
-) -> Result<HashMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
+) -> Result<BTreeMap<String, Vec<&VoiceData>>, Box<dyn Error>> {
     let now = chrono::Utc::now().format("%Y-%m-%d %H:%I").to_string();
 
     // Group voices by language code
-    let lang_groups: HashMap<String, Vec<&VoiceData>> =
-        voices.iter().fold(HashMap::new(), |mut map, voice| {
+    let lang_groups: BTreeMap<String, Vec<&VoiceData>> =
+        voices.iter().fold(BTreeMap::new(), |mut map, voice| {
             map.entry(voice.language_code.clone())
                 .or_default()
                 .push(voice);
@@ -736,14 +736,14 @@ fn extract_short_name(voice_name: &str) -> String {
         .to_case(Case::Pascal)
 }
 
-/// Groups voices by a key function and returns a HashMap of groups
-fn group_voices_by<F, K, V>(voices: &[V], key_fn: F) -> HashMap<K, Vec<V>>
+/// Groups voices by a key function and returns a BTreeMap of groups
+fn group_voices_by<F, K, V>(voices: &[V], key_fn: F) -> BTreeMap<K, Vec<V>>
 where
     F: Fn(&V) -> K,
     K: Eq + std::hash::Hash + Clone,
     V: Clone,
 {
-    let mut groups: HashMap<K, Vec<V>> = HashMap::new();
+    let mut groups: BTreeMap<K, Vec<V>> = BTreeMap::new();
     for voice in voices {
         groups.entry(key_fn(voice)).or_default().push(voice.clone());
     }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use crate::PriceType;
 
@@ -138,7 +138,7 @@ pub struct CallResource {
     pub uri: String,
 
     /// A list of subresources available to this call, identified by their URIs relative to `https://api.twilio.com`.
-    pub subresource_uris: HashMap<String, String>,
+    pub subresource_uris: BTreeMap<String, String>,
 
     /// An undocumented field (see examples at https://www.twilio.com/docs/voice/api/call-resource)
     #[serde(default)]
@@ -146,7 +146,7 @@ pub struct CallResource {
 
     /// Any extra available fields we may have missed.
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub extra: BTreeMap<String, Value>,
 }
 
 #[cfg(test)]

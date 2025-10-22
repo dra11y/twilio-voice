@@ -3,7 +3,7 @@ use bytes::Bytes;
 use futures_util::future::BoxFuture;
 use http::{Method, Uri, request::Parts};
 use http_body_util::BodyExt;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::task::{Context, Poll};
 use tower::{Layer, Service};
 use url::form_urlencoded;
@@ -163,7 +163,7 @@ impl TwilioRequest for TwilioRequestImpl {
             .map(String::from)
     }
 
-    fn body(&self) -> HashMap<String, String> {
+    fn body(&self) -> BTreeMap<String, String> {
         form_urlencoded::parse(&self.body_bytes)
             .into_owned()
             .collect()

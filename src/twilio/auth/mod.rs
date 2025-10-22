@@ -8,7 +8,7 @@ use regex::{Regex, RegexBuilder};
 use sha1::Sha1;
 use sha2::{Digest, Sha256};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, HashSet},
     sync::LazyLock,
 };
 use tracing::{debug, warn};
@@ -60,13 +60,13 @@ impl Default for RequestValidatorOptions {
 pub fn get_expected_twilio_signature(
     auth_token: &str,
     url: &str,
-    params: &HashMap<String, String>,
+    params: &BTreeMap<String, String>,
 ) -> String {
     let mut url = url_strip_auth(url);
 
     // If url contains bodySHA256 and params is empty, use empty params
     let use_params = if url.contains("bodySHA256") && params.is_empty() {
-        &HashMap::new()
+        &BTreeMap::new()
     } else {
         params
     };
@@ -147,7 +147,7 @@ fn validate_signature_with_url(
     auth_token: &str,
     twilio_sig: &str,
     url: &str,
-    params: &HashMap<String, String>,
+    params: &BTreeMap<String, String>,
 ) -> bool {
     debug!("validate_signature_with_url: {url}, params: {params:?}");
     let expected_sig = get_expected_twilio_signature(auth_token, url, params);
@@ -266,7 +266,7 @@ pub fn validate_request(
     auth_token: &str,
     twilio_sig: &str,
     url: &str,
-    params: &HashMap<String, String>,
+    params: &BTreeMap<String, String>,
     options: &RequestValidatorOptions,
 ) -> bool {
     debug!("Validating Twilio request from: {url}");
@@ -349,7 +349,7 @@ pub fn validate_request_with_body(
     body: &str,
     options: &RequestValidatorOptions,
 ) -> bool {
-    let empty_params = HashMap::new();
+    let empty_params = BTreeMap::new();
     let url_object = Url::parse(url).expect("Invalid URL");
 
     let body_hash = url_object
@@ -369,7 +369,7 @@ pub trait TwilioRequest {
     fn host(&self) -> String;
     fn path_and_query(&self) -> String;
     fn twilio_signature(&self) -> Option<String>;
-    fn body(&self) -> HashMap<String, String>;
+    fn body(&self) -> BTreeMap<String, String>;
     fn raw_body(&self) -> Option<String>;
 }
 
@@ -463,7 +463,7 @@ pub fn validate_incoming_request<T: TwilioRequest>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{collections::HashMap, time::Duration};
+    use std::{collections::BTreeMap, time::Duration};
 
     #[derive(Debug, Clone)]
     struct MockRequest {
@@ -472,7 +472,7 @@ mod tests {
         method: Method,
         path_and_query: String,
         signature: Option<String>,
-        body: HashMap<String, String>,
+        body: BTreeMap<String, String>,
         raw_body: Option<String>,
     }
 
@@ -493,7 +493,7 @@ mod tests {
             self.signature.clone()
         }
 
-        fn body(&self) -> HashMap<String, String> {
+        fn body(&self) -> BTreeMap<String, String> {
             self.body.clone()
         }
 
@@ -543,7 +543,7 @@ mod tests {
 
         pub fn trailing_slash_test_helper(url_with_slash: &str, url_without_slash: &str) {
             let auth_token = TEST_AUTH_TOKEN;
-            let params = HashMap::new();
+            let params = BTreeMap::new();
 
             let signature_for_url_with_slash =
                 get_expected_twilio_signature(auth_token, url_with_slash, &params);
@@ -723,7 +723,7 @@ mod tests {
         let auth_token = TEST_AUTH_TOKEN;
         let url = "https://example.com/myapp.php?foo=1&bar=2";
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert(
             "CallSid".to_string(),
             "CA0dc55c0a331a4638fc55b434423e3deb".to_string(),
@@ -746,7 +746,7 @@ mod tests {
         let auth_token = TEST_AUTH_TOKEN;
         let url = "https://example.com/myapp.php?foo=1&bar=2";
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert(
             "CallSid".to_string(),
             "CA867c5658e8f60047aa41c63de4caf9dc".to_string(),
@@ -839,7 +839,7 @@ mod tests {
         let body_hash = get_expected_body_hash(body);
         let url = format!("https://example.com/myapp?bodySHA256={body_hash}");
 
-        let expected_signature = get_expected_twilio_signature(auth_token, &url, &HashMap::new());
+        let expected_signature = get_expected_twilio_signature(auth_token, &url, &BTreeMap::new());
 
         // Test success case
         assert!(validate_request_with_body(
@@ -896,7 +896,7 @@ mod tests {
     fn test_validate_incoming_request_form() {
         let auth_token = TEST_AUTH_TOKEN;
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert(
             "CallSid".to_string(),
             "CA2637ab9b712f8e902051dca2764a8bbe".to_string(),
@@ -1003,7 +1003,7 @@ mod tests {
     #[test]
     fn test_special_chars_in_url() {
         let auth_token = TEST_AUTH_TOKEN;
-        let params = HashMap::new();
+        let params = BTreeMap::new();
 
         // URL with special chars that might be encoded differently
         let url = "https://example.com/path?q=a+b&r=c%20d&s=e%2Bf";
@@ -1020,7 +1020,7 @@ mod tests {
     #[test]
     fn test_with_auth() {
         let auth_token = TEST_AUTH_TOKEN;
-        let params = HashMap::new();
+        let params = BTreeMap::new();
 
         let auth = "user:password1234@";
         let url_with_auth = format!("https://{auth}example.com:443/test");
@@ -1074,7 +1074,7 @@ mod tests {
     #[test]
     fn test_malformed_inputs() {
         let auth_token = TEST_AUTH_TOKEN;
-        let params = HashMap::new();
+        let params = BTreeMap::new();
 
         // Invalid URL should return false
         assert!(!validate_request(
@@ -1109,7 +1109,7 @@ mod tests {
     #[test]
     fn test_all_url_variants_explicitly() {
         let auth_token = TEST_AUTH_TOKEN;
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert("key".to_string(), "value".to_string());
 
         // Test that validate_request checks all 4 variants explicitly
@@ -1171,7 +1171,7 @@ mod tests {
     #[test]
     fn test_large_payload() {
         let auth_token = TEST_AUTH_TOKEN;
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
 
         // Add many parameters to test sorting and concatenation with large payloads
         for i in 0..1000 {
@@ -1194,7 +1194,7 @@ mod tests {
         let auth_token = TEST_AUTH_TOKEN;
         let url = "https://example.com";
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         // Empty key
         params.insert("".to_string(), "value".to_string());
         // Key with special characters
@@ -1215,7 +1215,7 @@ mod tests {
     #[test]
     fn test_unicode_in_params() {
         let auth_token = TEST_AUTH_TOKEN;
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert("message".to_string(), "你好世界".to_string());
 
         let url = "https://example.com/unicode";
@@ -1238,14 +1238,14 @@ mod tests {
         let path_and_query = format!("/myapp?bodySHA256={body_hash}");
         let url = format!("https://example.com{path_and_query}");
 
-        let expected_signature = get_expected_twilio_signature(auth_token, &url, &HashMap::new());
+        let expected_signature = get_expected_twilio_signature(auth_token, &url, &BTreeMap::new());
 
         let request = MockRequest {
             protocol: "https".to_string(),
             host: "example.com".to_string(),
             path_and_query: path_and_query.clone(),
             signature: Some(expected_signature.clone()),
-            body: HashMap::new(),
+            body: BTreeMap::new(),
             raw_body: Some(body.to_string()),
             method: Method::POST,
         };
@@ -1265,7 +1265,7 @@ mod tests {
             host: "example.com".to_string(),
             path_and_query: path_and_query.clone(),
             signature: Some(expected_signature.clone()),
-            body: HashMap::new(),
+            body: BTreeMap::new(),
             raw_body: None, // No body
             method: Method::POST,
         };
@@ -1282,7 +1282,7 @@ mod tests {
             host: "example.com".to_string(),
             path_and_query: path_and_query.clone(),
             signature: Some(expected_signature.clone()),
-            body: HashMap::new(),
+            body: BTreeMap::new(),
             raw_body: Some(modified_body), // Modified body
             method: Method::POST,
         };
@@ -1303,7 +1303,7 @@ mod tests {
             host: "example.com".to_string(),
             path_and_query: path_and_query.clone(),
             signature: Some(wrong_signature.to_string()),
-            body: HashMap::new(),
+            body: BTreeMap::new(),
             raw_body: Some(body.to_string()),
             method: Method::POST,
         };
@@ -1319,7 +1319,7 @@ mod tests {
     fn test_validate_with_custom_url() {
         let auth_token = TEST_AUTH_TOKEN;
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert(
             "CallSid".to_string(),
             "CA375e36857dcc9f64b3233b7e80a6d6ba".to_string(),
@@ -1470,7 +1470,7 @@ mod tests {
 
         // Test port handling in signatures
         let auth_token = TEST_AUTH_TOKEN;
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert("Test".to_string(), "Value".to_string());
 
         // Generate signatures for URLs with and without port
@@ -1527,7 +1527,7 @@ mod tests {
         // These URLs are different as strings
         assert_ne!(url_standard, url_encoded);
 
-        let mut params = HashMap::new();
+        let mut params = BTreeMap::new();
         params.insert("Test".to_string(), "Value".to_string());
 
         // Generate signature using standard URL format
