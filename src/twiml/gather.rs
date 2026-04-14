@@ -265,7 +265,7 @@ pub struct Gather {
     ///
     /// Necessity: Optional
     ///
-    /// Accepted values: `default`, `numbers_and_commands`, `phone_call`, `experimental_conversations`, `experimental_utterances`, `googlev2_long`, `googlev2_short`, `googlev2_telephony`, `googlev2_telephony_short`, `deepgram_nova-2`
+    /// Accepted values: `default`, `numbers_and_commands`, `phone_call`, `experimental_conversations`, `experimental_utterances`, `googlev2_long`, `googlev2_short`, `googlev2_telephony`, `googlev2_telephony_short`, `deepgram_nova-2`, `deepgram_nova-3`
     ///
     /// Default value: `default`
     ///
@@ -277,6 +277,10 @@ pub struct Gather {
     /// #### Generic speech-to-text models
     /// Generic models include the following values (see documentation for supported languages):
     /// `default`, `phone_call`, `numbers_and_commands`, `experimental_conversations`, `experimental_utterances`
+    ///
+    /// If you _don't_ select a [specific STT provider and speech model](https://www.twilio.com/docs/voice/twiml/gather#specific-speech-to-text-models), Twilio takes the following actions:
+    /// -  Selects the speech-to-text provider and speech model for `<Gather>`.
+    /// -  Handles failover to an available STT provider should STT provider have an outage.
     ///
     /// Documentation: https://www.twilio.com/docs/voice/twiml/gather#speechmodel
     #[serde(rename = "@speechModel")]
@@ -423,18 +427,37 @@ pub enum GatherVerb {
 #[serde(rename_all = "snake_case")]
 pub enum SpeechModel {
     #[default]
+    /// Generic. Supported languages: Any supported [here](https://cloud.google.com/speech-to-text/v2/docs/speech-to-text-supported-languages); see Footnote 1 below
     Default,
+    /// Generic. Supported languages: Use any language supported by Deepgram's nova-2 model, as listed in their [documentation.](https://developers.deepgram.com/docs/models-languages-overview#nova-2)
     NumbersAndCommands,
+    /// Generic. Supported languages: en-US, en-GB, en-AU, fr-FR, fr-CA, ja-JP, ru-RU, es-US, es-ES, pt-BR
     PhoneCall,
+    /// Generic. Spontaneous speech and conversations
+    /// e.g. "tell us why you're calling today."
+    /// Supported languages: ar-*, da-DK, de-DE, en-AU, en-GB, en-IN, en-US, es-ES, es-US, fi-FI, fr-CA, fr-FR, hi-IN, ja-JP, ko-KR, mk-MK, nl-NL, no-NO, pl-PL, pt-BR, pt-PT, ro-RO, ru-RU, th-TH, tr-TR, uk-UA, vi-VN
     ExperimentalConversations,
+    /// Generic. Short utterances of a few seconds in length like commands or other single word directed speech
+    /// e.g. "press 0 or say 'support' to speak with an agent."
+    /// Supported languages: ar-*, da-DK, de-DE, en-AU, en-GB, en-IN, en-US, es-ES, es-US, fi-FI, fr-CA, fr-FR, hi-IN, ja-JP, ko-KR, mk-MK, nl-NL, no-NO, pl-PL, pt-BR, pt-PT, ro-RO, ru-RU, th-TH, tr-TR, uk-UA, vi-VN
     ExperimentalUtterances,
+    /// Google STT v2
     Googlev2Long,
+    /// Google STT v2
     Googlev2Short,
+    /// Google STT v2
     Googlev2Telephony,
+    /// Google STT v2
     Googlev2TelephonyShort,
+    /// Deepgram. Language support: To see which languages and models Deepgram supports, see [Deepgram's language and model mapping](https://developers.deepgram.com/docs/models-languages-overview) for `nova-2` model language support.
+    /// **Note**: `Language=multi-` is available only when you use the specific speechModel `deepgram_nova-3`. Twilio does not support `nova-2`'s multi-language capabilities in `<Gather>`.
     #[strum(serialize = "deepgram_nova-2")]
     #[serde(rename = "deepgram_nova-2")]
     DeepgramNova2,
+    /// Deepgram. Language support: To see which languages and models Deepgram supports, see [Deepgram's language and model mapping](https://developers.deepgram.com/docs/models-languages-overview) for `nova-2` model language support.
+    #[strum(serialize = "deepgram_nova-3")]
+    #[serde(rename = "deepgram_nova-3")]
+    DeepgramNova3,
 }
 
 pub trait GatherBuilderVerbs {
